@@ -162,8 +162,7 @@ No. Usa WMI y el registro de Windows, asi que es solo para Windows 10 / 11.
 **¿Envia datos a internet?**
 No. La app lee solo de tu propia maquina y no hace ninguna conexion saliente.
 
-**¿Puedo cerrarla y volver a abrirla sin problema?**
-Si. No guarda estado ni deja nada en segundo plano.
+
 
 ---
 
