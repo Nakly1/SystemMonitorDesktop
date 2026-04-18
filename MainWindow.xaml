@@ -1,0 +1,521 @@
+<Window x:Class="SystemMonitorDesktop.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="System Monitor" Height="900" Width="1060"
+        MinWidth="860" MinHeight="640"
+        Background="#0d1117"
+        FontFamily="Segoe UI"
+        TextOptions.TextFormattingMode="Display"
+        UseLayoutRounding="True">
+
+    <Window.Resources>
+
+        <SolidColorBrush x:Key="Bg"        Color="#0d1117"/>
+        <SolidColorBrush x:Key="CardBg"    Color="#161b22"/>
+        <SolidColorBrush x:Key="CardBorder" Color="#30363d"/>
+        <SolidColorBrush x:Key="Text"      Color="#e6edf3"/>
+        <SolidColorBrush x:Key="Muted"     Color="#8b949e"/>
+        <SolidColorBrush x:Key="Accent"    Color="#58a6ff"/>
+        <SolidColorBrush x:Key="Good"      Color="#3fb950"/>
+        <SolidColorBrush x:Key="Warn"      Color="#d29922"/>
+        <SolidColorBrush x:Key="Bad"       Color="#f85149"/>
+
+        <LinearGradientBrush x:Key="HeaderBg" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#010409" Offset="0"/>
+            <GradientStop Color="#0b1a2b" Offset="1"/>
+        </LinearGradientBrush>
+
+        <Style x:Key="FlatBar" TargetType="ProgressBar">
+            <Setter Property="Height" Value="9"/>
+            <Setter Property="Background" Value="#21262d"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ProgressBar">
+                        <Grid ClipToBounds="True">
+                            <Border Background="{TemplateBinding Background}" CornerRadius="5"/>
+                            <Border x:Name="PART_Track" CornerRadius="5"/>
+                            <Border x:Name="PART_Indicator"
+                                    Background="{TemplateBinding Foreground}"
+                                    CornerRadius="5"
+                                    HorizontalAlignment="Left"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource CardBg}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource CardBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="18"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+        </Style>
+
+        <Style x:Key="SectionLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{StaticResource Muted}"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+
+        <Style x:Key="Detail" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="{StaticResource Muted}"/>
+        </Style>
+
+        <Style x:Key="Value" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="{StaticResource Text}"/>
+        </Style>
+
+        <Style x:Key="Btn" TargetType="Button">
+            <Setter Property="Background" Value="#21262d"/>
+            <Setter Property="Foreground" Value="{StaticResource Text}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource CardBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="14,8"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#2d333b"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#0d1117"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PrimaryBtn" TargetType="Button" BasedOn="{StaticResource Btn}">
+            <Setter Property="Background" Value="#238636"/>
+            <Setter Property="BorderBrush" Value="#2ea043"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#2ea043"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#1f6f2b"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="KillBtn" TargetType="Button" BasedOn="{StaticResource Btn}">
+            <Setter Property="Padding" Value="8,3"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="Foreground" Value="#f85149"/>
+            <Setter Property="BorderBrush" Value="#3d1c1e"/>
+            <Setter Property="Background" Value="#1a0f10"/>
+        </Style>
+
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="56"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="26"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="{StaticResource HeaderBg}"
+                BorderBrush="{StaticResource CardBorder}" BorderThickness="0,0,0,1">
+            <Grid Margin="18,0">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Width="26" Height="26" CornerRadius="6" Background="#58a6ff"
+                            Margin="0,0,10,0">
+                        <TextBlock Text="SM" Foreground="#010409" FontWeight="Bold"
+                                   FontSize="11" HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+                    <TextBlock Text="System Monitor" FontSize="15" FontWeight="SemiBold"
+                               Foreground="{StaticResource Text}" VerticalAlignment="Center"/>
+                    <Border Background="#1f2b3d" CornerRadius="10" Padding="7,2"
+                            Margin="10,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="v1.0" FontSize="10" Foreground="#8bb2e0"
+                                   FontWeight="SemiBold"/>
+                    </Border>
+                </StackPanel>
+                <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center"
+                            Orientation="Horizontal">
+                    <TextBlock x:Name="UptimeText" Text="—"
+                               FontSize="11" Foreground="{StaticResource Muted}"
+                               VerticalAlignment="Center" FontFamily="Consolas"/>
+                    <Rectangle Width="1" Height="14" Fill="#30363d" Margin="12,0"/>
+                    <TextBlock x:Name="ClockText"
+                               FontSize="12" Foreground="{StaticResource Muted}"
+                               VerticalAlignment="Center" FontFamily="Consolas"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                      Background="{StaticResource Bg}">
+            <StackPanel Margin="16,14,16,16">
+
+                <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="230"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <Grid>
+                                <TextBlock Text="MEMORIA RAM — TIEMPO REAL"
+                                           Style="{StaticResource SectionLabel}"/>
+                                <TextBlock x:Name="RamUpdateText"
+                                           HorizontalAlignment="Right" FontSize="10"
+                                           Foreground="{StaticResource Muted}" Margin="0,0,0,10"/>
+                            </Grid>
+
+                            <Grid Margin="0,0,0,10">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom">
+                                    <TextBlock x:Name="RamUsedText" Text="—"
+                                               FontSize="36" FontWeight="Bold"
+                                               Foreground="{StaticResource Text}"/>
+                                    <TextBlock Text=" / " FontSize="20"
+                                               Foreground="{StaticResource Muted}"
+                                               VerticalAlignment="Bottom" Margin="0,0,0,5"/>
+                                    <TextBlock x:Name="RamTotalText" Text="—"
+                                               FontSize="20" Foreground="{StaticResource Muted}"
+                                               VerticalAlignment="Bottom" Margin="0,0,0,5"/>
+                                </StackPanel>
+                                <TextBlock x:Name="RamPercentText" Text="—%"
+                                           FontSize="36" FontWeight="Bold" Foreground="{StaticResource Good}"
+                                           HorizontalAlignment="Right"/>
+                            </Grid>
+
+                            <ProgressBar x:Name="RamBar" Style="{StaticResource FlatBar}"
+                                         Height="14" Maximum="100" Value="0"
+                                         Foreground="{StaticResource Good}" Margin="0,0,0,10"/>
+
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock x:Name="RamAvailableText" Text="Disponible: —"
+                                           Style="{StaticResource Detail}"/>
+                                <TextBlock Text="   •   " Foreground="#30363d" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="RamUsedMBText" Text="Usado: —"
+                                           Style="{StaticResource Detail}"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <Border Grid.Column="1" Background="#0b0f14" CornerRadius="6"
+                                BorderBrush="{StaticResource CardBorder}" BorderThickness="1"
+                                Margin="16,0,0,0" Padding="8">
+                            <Grid>
+                                <TextBlock Text="HISTORIAL (60s)" FontSize="9"
+                                           FontWeight="Bold" Foreground="{StaticResource Muted}"
+                                           VerticalAlignment="Top"/>
+                                <Canvas x:Name="RamSparkCanvas" ClipToBounds="True"
+                                        Margin="0,14,0,0"/>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Style="{StaticResource Card}">
+                        <StackPanel>
+                            <Grid>
+                                <TextBlock Text="PROCESADOR (CPU)" Style="{StaticResource SectionLabel}"/>
+                                <TextBlock x:Name="CpuUsageText" Text="—%"
+                                           HorizontalAlignment="Right" FontSize="16"
+                                           FontWeight="Bold" Foreground="{StaticResource Good}"
+                                           Margin="0,-4,0,0"/>
+                            </Grid>
+                            <TextBlock x:Name="CpuNameText" Text="Cargando..."
+                                       FontSize="14" FontWeight="SemiBold"
+                                       Foreground="{StaticResource Text}"
+                                       TextWrapping="Wrap" Margin="0,0,0,8"/>
+                            <ProgressBar x:Name="CpuBar" Style="{StaticResource FlatBar}"
+                                         Height="7" Maximum="100" Value="0"
+                                         Foreground="{StaticResource Good}" Margin="0,0,0,10"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Nucleos / Hilos:  "
+                                           Style="{StaticResource Detail}" Margin="0,0,0,4"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" x:Name="CpuCoresText"
+                                           Text="?" Style="{StaticResource Value}" Margin="0,0,0,4"/>
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Velocidad max:  "
+                                           Style="{StaticResource Detail}"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" x:Name="CpuSpeedText"
+                                           Text="?" Style="{StaticResource Value}"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="2" Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Text="TARJETA GRAFICA (GPU)" Style="{StaticResource SectionLabel}"/>
+                            <TextBlock x:Name="GpuNameText" Text="Cargando..."
+                                       FontSize="14" FontWeight="SemiBold"
+                                       Foreground="{StaticResource Text}"
+                                       TextWrapping="Wrap" Margin="0,0,0,10"/>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="VRAM:  " Style="{StaticResource Detail}"/>
+                                <TextBlock x:Name="GpuVramText" Text="?"
+                                           FontSize="13" FontWeight="SemiBold"
+                                           Foreground="{StaticResource Accent}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Text="RAM — ESPECIFICACIONES" Style="{StaticResource SectionLabel}"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Tipo:  "
+                                           Style="{StaticResource Detail}" Margin="0,0,0,6"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" x:Name="RamTypeText"
+                                           FontSize="13" FontWeight="Bold" Foreground="{StaticResource Good}"
+                                           Margin="0,0,0,6"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Velocidad:  "
+                                           Style="{StaticResource Detail}" Margin="0,0,0,6"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" x:Name="RamSpeedText"
+                                           Style="{StaticResource Value}" Margin="0,0,0,6"/>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Total instalada:  "
+                                           Style="{StaticResource Detail}"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" x:Name="RamTotalDetailText"
+                                           Style="{StaticResource Value}" TextWrapping="Wrap"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="2" Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Text="SISTEMA OPERATIVO" Style="{StaticResource SectionLabel}"/>
+                            <TextBlock x:Name="OsNameText" Text="Cargando..."
+                                       FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{StaticResource Text}"
+                                       TextWrapping="Wrap" Margin="0,0,0,10"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Build:  "
+                                           Style="{StaticResource Detail}" Margin="0,0,0,6"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" x:Name="OsBuildText"
+                                           Style="{StaticResource Value}" Margin="0,0,0,6"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Arquitectura:  "
+                                           Style="{StaticResource Detail}" Margin="0,0,0,6"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" x:Name="OsArchText"
+                                           Style="{StaticResource Value}" Margin="0,0,0,6"/>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Equipo:  "
+                                           Style="{StaticResource Detail}"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" x:Name="HostnameText"
+                                           Style="{StaticResource Value}"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Text="RED" Style="{StaticResource SectionLabel}"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="BAJADA" FontSize="10"
+                                               Foreground="{StaticResource Muted}"
+                                               FontWeight="Bold" Margin="0,0,0,4"/>
+                                    <TextBlock x:Name="NetDownText" Text="—"
+                                               FontSize="20" FontWeight="SemiBold"
+                                               Foreground="{StaticResource Accent}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="SUBIDA" FontSize="10"
+                                               Foreground="{StaticResource Muted}"
+                                               FontWeight="Bold" Margin="0,0,0,4"/>
+                                    <TextBlock x:Name="NetUpText" Text="—"
+                                               FontSize="20" FontWeight="SemiBold"
+                                               Foreground="#d29922"/>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="2" Style="{StaticResource Card}"
+                            x:Name="BatteryCard">
+                        <StackPanel>
+                            <TextBlock Text="BATERIA" Style="{StaticResource SectionLabel}"/>
+                            <Grid Margin="0,0,0,6">
+                                <TextBlock x:Name="BatteryPercentText" Text="—%"
+                                           FontSize="24" FontWeight="Bold"
+                                           Foreground="{StaticResource Good}"/>
+                                <TextBlock x:Name="BatteryStatusText" Text="—"
+                                           HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                           FontSize="12" Foreground="{StaticResource Muted}"
+                                           Margin="0,0,0,4"/>
+                            </Grid>
+                            <ProgressBar x:Name="BatteryBar" Style="{StaticResource FlatBar}"
+                                         Height="8" Maximum="100" Value="0"
+                                         Foreground="{StaticResource Good}"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="ALMACENAMIENTO" Style="{StaticResource SectionLabel}"/>
+                        <StackPanel x:Name="DiskPanel">
+                            <TextBlock Text="Cargando discos..." Style="{StaticResource Detail}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="TOP 10 PROCESOS POR USO DE RAM"
+                                   Style="{StaticResource SectionLabel}"/>
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="70"/>
+                                <ColumnDefinition Width="90"/>
+                                <ColumnDefinition Width="70"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="PROCESO"
+                                       FontSize="10" FontWeight="Bold" Foreground="{StaticResource Muted}"/>
+                            <TextBlock Grid.Column="1" Text="PID"
+                                       FontSize="10" FontWeight="Bold" Foreground="{StaticResource Muted}"/>
+                            <TextBlock Grid.Column="2" Text="RAM"
+                                       FontSize="10" FontWeight="Bold" Foreground="{StaticResource Muted}"
+                                       HorizontalAlignment="Right"/>
+                            <TextBlock Grid.Column="3" Text=""
+                                       FontSize="10" FontWeight="Bold" Foreground="{StaticResource Muted}"/>
+                        </Grid>
+                        <Rectangle Fill="#30363d" Height="1" Margin="0,0,0,8"/>
+                        <StackPanel x:Name="ProcessPanel">
+                            <TextBlock Text="Cargando..." Style="{StaticResource Detail}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="ACCIONES DEL SISTEMA"
+                                   Style="{StaticResource SectionLabel}"/>
+                        <TextBlock Style="{StaticResource Detail}" TextWrapping="Wrap"
+                                   Margin="0,0,0,14"
+                                   Text="Libera espacio, memoria o guarda un informe completo del sistema."/>
+                        <WrapPanel>
+                            <Button x:Name="CleanButton"
+                                    Content="Limpiar temporales"
+                                    Style="{StaticResource Btn}"
+                                    Click="CleanButton_Click"
+                                    Margin="0,0,8,8"/>
+                            <Button x:Name="GcButton"
+                                    Content="Forzar Garbage Collection"
+                                    Style="{StaticResource Btn}"
+                                    Click="GcButton_Click"
+                                    Margin="0,0,8,8"/>
+                            <Button x:Name="ExportButton"
+                                    Content="Exportar informe (.txt)"
+                                    Style="{StaticResource PrimaryBtn}"
+                                    Click="ExportButton_Click"
+                                    Margin="0,0,8,8"/>
+                        </WrapPanel>
+                        <TextBlock x:Name="CleanResultText"
+                                   Foreground="{StaticResource Good}" FontSize="12"
+                                   Margin="0,8,0,0" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <Border Grid.Row="2" Background="#010409"
+                BorderBrush="{StaticResource CardBorder}" BorderThickness="0,1,0,0">
+            <Grid Margin="14,0">
+                <TextBlock Text="System Monitor v1.0 — primera version"
+                           FontSize="10" Foreground="{StaticResource Muted}"
+                           VerticalAlignment="Center"/>
+                <TextBlock x:Name="StatusBarText" Text="Listo"
+                           HorizontalAlignment="Right" VerticalAlignment="Center"
+                           FontSize="10" Foreground="{StaticResource Muted}"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

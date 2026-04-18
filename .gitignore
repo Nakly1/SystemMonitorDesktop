@@ -1,0 +1,59 @@
+# Build output
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docview
+*.sln.docstates
+
+# VS Code / Rider / Editors
+.vscode/
+.idea/
+_ReSharper.Caches/
+*.DotSettings.user
+
+# NuGet
+packages/
+*.nupkg
+*.snupkg
+project.lock.json
+project.assets.json
+
+# MSBuild / analyzers
+*.binlog
+msbuild.ProjectImports.zip
+
+# Debug symbols (no necesarios para el usuario final)
+*.pdb
+
+# Test / coverage
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+*.trx
+
+# Logs
+*.log
+
+# OS junk
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# Editor backups
+*.swp
+*.bak
+*.tmp
+*~
+
+# Secrets / local env
+*.env
+secrets.json
