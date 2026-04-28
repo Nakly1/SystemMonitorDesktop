@@ -1,0 +1,43 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore SystemMonitorDesktop.csproj
+
+      - name: Build (Release)
+        run: dotnet build SystemMonitorDesktop.csproj -c Release --no-restore
+
+      - name: Publish (win-x64, framework-dependent)
+        run: >
+          dotnet publish SystemMonitorDesktop.csproj
+          -c Release
+          -r win-x64
+          --self-contained false
+          -o publish
+          --no-restore
+
+      - name: Upload publish artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SystemMonitorDesktop-${{ github.sha }}
+          path: publish/
+          retention-days: 7
