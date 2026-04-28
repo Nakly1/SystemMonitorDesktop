@@ -57,3 +57,11 @@ $RECYCLE.BIN/
 # Secrets / local env
 *.env
 secrets.json
+
+# Asistentes locales / herramientas de IA
+.claude/
+.cursor/
+.aider*
+.continue/
+.github-copilot/
+
