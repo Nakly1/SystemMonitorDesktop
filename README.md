@@ -69,7 +69,7 @@ No necesita instalacion, no modifica el registro, no crea accesos directos.
 Necesitas el [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0):
 
 ```bash
-git clone https://github.com/tu-usuario/SystemMonitorDesktop.git
+git clone https://github.com/Nakly1/SystemMonitorDesktop.git
 cd SystemMonitorDesktop
 dotnet publish -c Release -r win-x64 --self-contained false -o AppRelease
 ```
