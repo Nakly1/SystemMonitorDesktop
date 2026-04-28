@@ -11,6 +11,7 @@ Muestra en tiempo real RAM, CPU, GPU, red, bateria, discos y procesos — todo e
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/es-es/download/dotnet/8.0)
 [![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-0078D4?style=for-the-badge&logo=windows)](#)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](#licencia)
+[![Build](https://img.shields.io/github/actions/workflow/status/Nakly1/SystemMonitorDesktop/build.yml?branch=main&style=for-the-badge&logo=github)](https://github.com/Nakly1/SystemMonitorDesktop/actions/workflows/build.yml)
 
 </div>
 
