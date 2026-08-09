@@ -8,6 +8,9 @@
     <RootNamespace>SystemMonitorDesktop</RootNamespace>
     <AssemblyName>SystemMonitorDesktop</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- Sin esto, `dotnet restore` no genera destino para net8.0-windows/win-x64
+         y publicar despues con ese RID falla con NETSDK1047. -->
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
   </PropertyGroup>
 
   <PropertyGroup>
