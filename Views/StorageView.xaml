@@ -1,0 +1,33 @@
+<UserControl x:Class="SystemMonitorDesktop.Views.StorageView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="Transparent">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="30,24,26,30">
+
+            <TextBlock Text="Almacenamiento" Style="{StaticResource T.Title}"/>
+            <TextBlock x:Name="SubtitleText" Style="{StaticResource T.Secondary}"
+                       Text="Leyendo unidades…" Margin="0,4,0,22"/>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+                <StackPanel>
+                    <TextBlock Text="Volúmenes" Style="{StaticResource T.Headline}" Margin="0,0,0,4"/>
+                    <TextBlock Text="Espacio ocupado en cada letra de unidad."
+                               Style="{StaticResource T.Secondary}" Margin="0,0,0,18"/>
+                    <StackPanel x:Name="VolumesPanel"/>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock Text="Unidades físicas" Style="{StaticResource T.Headline}" Margin="0,0,0,4"/>
+                    <TextBlock Text="Los discos reales que hay dentro del equipo, con su número de serie."
+                               Style="{StaticResource T.Secondary}" Margin="0,0,0,18"/>
+                    <StackPanel x:Name="DrivesPanel"/>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

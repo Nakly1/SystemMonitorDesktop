@@ -9,6 +9,19 @@
     <AssemblyName>SystemMonitorDesktop</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <Product>System Monitor</Product>
+    <AssemblyTitle>System Monitor</AssemblyTitle>
+    <Description>Monitor de sistema y actas de hardware para Windows.</Description>
+    <Company>System Monitor</Company>
+    <Version>2.0.0</Version>
+    <FileVersion>2.0.0.0</FileVersion>
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <Copyright>Copyright © 2026</Copyright>
+    <NeutralLanguage>es</NeutralLanguage>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="System.Management" Version="8.0.0" />
   </ItemGroup>
