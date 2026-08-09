@@ -3,24 +3,15 @@ using System.IO;
 using System.Management;
 using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
-using System.Text;
 using Microsoft.Win32;
 
 namespace SystemMonitorDesktop.Services;
 
-public record CpuInfo(string Name, int Cores, int Threads, int MaxMHz);
-public record GpuInfo(string Name, long VramMB);
-public record RamStaticInfo(long TotalMB, string Type, int SpeedMHz, int Slots);
-public record OsInfo(string Name, string Build, string Architecture);
-public record NetSample(double DownKbps, double UpKbps);
-public record BatteryInfo(bool Present, int Percent, bool OnAc, string Status);
-
-public record DiskInfo(string Letter, string Label, long TotalGB, long FreeGB)
-{
-    public long UsedGB => TotalGB - FreeGB;
-    public double UsedPercent => TotalGB > 0 ? Math.Round((double)UsedGB / TotalGB * 100, 1) : 0;
-}
-
+/// <summary>
+/// Única puerta de entrada al hardware. Todas las consultas WMI viven aquí y
+/// ninguna lanza: si el equipo o los permisos no dan la información, se
+/// devuelve un valor vacío coherente en lugar de romper la interfaz.
+/// </summary>
 public class HardwareService
 {
     private long _cachedTotalMB;
@@ -33,30 +24,70 @@ public class HardwareService
     private long _prevNetBytesSent;
     private DateTime _prevNetTime = DateTime.MinValue;
 
+    // Lo estático se consulta una vez: WMI es caro y estos datos no cambian
+    // mientras el equipo esté encendido.
+    private StaticSnapshot? _staticCache;
+
+    // ────────────────────────── Instantáneas ──────────────────────────
+
+    public StaticSnapshot GetStatic(bool forceRefresh = false)
+    {
+        if (_staticCache is not null && !forceRefresh) return _staticCache;
+
+        _staticCache = new StaticSnapshot(
+            Cpu: GetCpu(),
+            Gpus: GetGpus(),
+            Ram: GetRam(),
+            Os: GetOs(),
+            Board: GetBoard(),
+            Volumes: GetVolumes(),
+            Disks: GetPhysicalDisks(),
+            Adapters: GetAdapters());
+
+        return _staticCache;
+    }
+
+    public RealtimeSnapshot GetRealtime()
+    {
+        var (used, total, available) = GetRamUsage();
+        return new RealtimeSnapshot(
+            RamUsedMB: used,
+            RamTotalMB: total,
+            RamAvailableMB: available,
+            CpuPercent: GetCpuUsage(),
+            Network: GetNetworkSample(),
+            Battery: GetBattery(),
+            Uptime: GetUptime(),
+            TopProcesses: GetTopProcesses(),
+            TakenAt: DateTime.Now);
+    }
+
+    // ────────────────────────── CPU ──────────────────────────
+
     public CpuInfo GetCpu()
     {
-        try
+        foreach (var obj in Query(
+            "SELECT Name, NumberOfCores, NumberOfLogicalProcessors, MaxClockSpeed, ProcessorId, SocketDesignation FROM Win32_Processor"))
         {
-            using var searcher = new ManagementObjectSearcher(
-                "SELECT Name, NumberOfCores, NumberOfLogicalProcessors, MaxClockSpeed FROM Win32_Processor");
-            foreach (ManagementObject obj in searcher.Get())
-            {
-                return new CpuInfo(
-                    Name: obj["Name"]?.ToString()?.Trim() ?? "Desconocido",
-                    Cores: Convert.ToInt32(obj["NumberOfCores"] ?? 0),
-                    Threads: Convert.ToInt32(obj["NumberOfLogicalProcessors"] ?? 0),
-                    MaxMHz: Convert.ToInt32(obj["MaxClockSpeed"] ?? 0)
-                );
-            }
+            return new CpuInfo(
+                Name: HardwareText.Clean(obj["Name"], HardwareText.Unavailable),
+                Cores: ToInt(obj["NumberOfCores"]),
+                Threads: ToInt(obj["NumberOfLogicalProcessors"]),
+                MaxMHz: ToInt(obj["MaxClockSpeed"]),
+                ProcessorId: HardwareText.Clean(obj["ProcessorId"]),
+                Socket: HardwareText.Clean(obj["SocketDesignation"]));
         }
-        catch { }
-        return new CpuInfo("No disponible", 0, 0, 0);
+
+        return new CpuInfo(HardwareText.Unavailable, Environment.ProcessorCount, Environment.ProcessorCount,
+            0, HardwareText.Unknown, HardwareText.Unknown);
     }
 
     public double GetCpuUsage()
     {
         try
         {
+            // La primera lectura de un PerformanceCounter siempre es 0: necesita
+            // dos muestras para calcular un delta.
             if (!_cpuWarmedUp)
             {
                 _cpuCounter.NextValue();
@@ -68,56 +99,63 @@ public class HardwareService
         catch { return 0; }
     }
 
-    public GpuInfo GetGpu()
+    // ────────────────────────── GPU ──────────────────────────
+
+    public List<GpuInfo> GetGpus()
     {
-        try
+        var gpus = new List<GpuInfo>();
+
+        foreach (var obj in Query(
+            "SELECT Name, AdapterRAM, DriverVersion, PNPDeviceID FROM Win32_VideoController"))
         {
-            using var searcher = new ManagementObjectSearcher(
-                "SELECT Name, AdapterRAM FROM Win32_VideoController");
-            foreach (ManagementObject obj in searcher.Get())
+            var name = obj["Name"]?.ToString()?.Trim() ?? "";
+            if (string.IsNullOrWhiteSpace(name)) continue;
+            if (name.Contains("Remote Display", StringComparison.OrdinalIgnoreCase)
+                || name.Contains("Basic Display", StringComparison.OrdinalIgnoreCase)
+                || name.Contains("Microsoft Display", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            long vramMB = 0;
+            if (obj["AdapterRAM"] is not null)
             {
-                var name = obj["Name"]?.ToString() ?? "";
-                if (string.IsNullOrWhiteSpace(name)
-                    || name.Contains("Remote Display", StringComparison.OrdinalIgnoreCase)
-                    || name.Contains("Basic Display", StringComparison.OrdinalIgnoreCase)
-                    || name.Contains("Microsoft Display", StringComparison.OrdinalIgnoreCase))
-                    continue;
-
-                long vramMB = 0;
-                if (obj["AdapterRAM"] != null)
+                try
                 {
-                    // AdapterRAM is uint32 — overflows at 4 GB on WMI
-                    var raw = Convert.ToUInt32(obj["AdapterRAM"]);
-                    vramMB = raw / (1024 * 1024);
+                    // AdapterRAM es uint32 y se desborda a partir de 4 GB.
+                    vramMB = Convert.ToUInt32(obj["AdapterRAM"]) / (1024 * 1024);
                 }
-
-                if (vramMB == 0 || vramMB >= 4094)
-                {
-                    var regVram = GetVramFromRegistry();
-                    if (regVram > 0) vramMB = regVram;
-                }
-
-                return new GpuInfo(name, vramMB);
+                catch { }
             }
+
+            if (vramMB == 0 || vramMB >= 4094)
+            {
+                var regVram = GetVramFromRegistry();
+                if (regVram > 0) vramMB = regVram;
+            }
+
+            gpus.Add(new GpuInfo(
+                Name: name,
+                VramMB: vramMB,
+                DriverVersion: HardwareText.Clean(obj["DriverVersion"]),
+                DeviceId: HardwareText.Clean(obj["PNPDeviceID"])));
         }
-        catch { }
-        return new GpuInfo("No disponible", 0);
+
+        return gpus;
     }
 
-    private long GetVramFromRegistry()
+    private static long GetVramFromRegistry()
     {
         try
         {
             using var baseKey = Registry.LocalMachine.OpenSubKey(
                 @"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}");
-            if (baseKey == null) return 0;
+            if (baseKey is null) return 0;
 
             foreach (var subKeyName in baseKey.GetSubKeyNames())
             {
                 if (!int.TryParse(subKeyName, out _)) continue;
                 using var subKey = baseKey.OpenSubKey(subKeyName);
                 var val = subKey?.GetValue("HardwareInformation.qwMemorySize");
-                if (val is byte[] bytes && bytes.Length == 8)
+                if (val is byte[] { Length: 8 } bytes)
                     return BitConverter.ToInt64(bytes, 0) / (1024 * 1024);
                 if (val is long lv && lv > 0)
                     return lv / (1024 * 1024);
@@ -127,117 +165,221 @@ public class HardwareService
         return 0;
     }
 
-    public RamStaticInfo GetRamStatic()
-    {
-        long totalMB = 0;
-        int speedMHz = 0;
-        int slots = 0;
-        string type = "DDR4";
+    // ────────────────────────── Memoria ──────────────────────────
 
-        try
+    public RamSummary GetRam()
+    {
+        var modules = new List<MemoryModule>();
+        long totalMB = 0;
+
+        foreach (var obj in Query(
+            "SELECT BankLabel, DeviceLocator, Manufacturer, PartNumber, SerialNumber, Capacity, " +
+            "Speed, ConfiguredClockSpeed, SMBIOSMemoryType, FormFactor, ConfiguredVoltage " +
+            "FROM Win32_PhysicalMemory"))
         {
-            using var searcher = new ManagementObjectSearcher(
-                "SELECT Capacity, Speed, SMBIOSMemoryType FROM Win32_PhysicalMemory");
-            foreach (ManagementObject obj in searcher.Get())
-            {
-                slots++;
-                totalMB += Convert.ToInt64(obj["Capacity"] ?? 0L) / (1024 * 1024);
-                if (speedMHz == 0 && obj["Speed"] != null)
-                    speedMHz = Convert.ToInt32(obj["Speed"]);
-                if (obj["SMBIOSMemoryType"] != null)
-                    type = Convert.ToInt32(obj["SMBIOSMemoryType"]) switch
-                    {
-                        34 => "DDR5",
-                        26 => "DDR4",
-                        24 => "DDR3",
-                        20 => "DDR2",
-                        _ => type
-                    };
-            }
+            var capacityMB = ToLong(obj["Capacity"]) / (1024 * 1024);
+            totalMB += capacityMB;
+
+            modules.Add(new MemoryModule(
+                Slot: HardwareText.Clean(obj["DeviceLocator"], $"Ranura {modules.Count + 1}"),
+                Bank: HardwareText.Clean(obj["BankLabel"], ""),
+                Manufacturer: JedecVendors.Resolve(obj["Manufacturer"]),
+                PartNumber: HardwareText.Clean(obj["PartNumber"]),
+                SerialNumber: HardwareText.Clean(obj["SerialNumber"]),
+                CapacityMB: capacityMB,
+                Type: MemoryTypeName(ToInt(obj["SMBIOSMemoryType"])),
+                RatedSpeedMHz: ToInt(obj["Speed"]),
+                ConfiguredSpeedMHz: ToInt(obj["ConfiguredClockSpeed"]),
+                FormFactor: FormFactorName(ToInt(obj["FormFactor"])),
+                VoltageV: ToInt(obj["ConfiguredVoltage"]) / 1000.0));
         }
-        catch { }
 
         _cachedTotalMB = totalMB;
-        return new RamStaticInfo(totalMB, type, speedMHz, slots);
+
+        var dominantType = modules
+            .Select(m => m.Type)
+            .FirstOrDefault(t => t != HardwareText.Unknown) ?? HardwareText.Unknown;
+
+        var topSpeed = modules.Count > 0 ? modules.Max(m => m.RatedSpeedMHz) : 0;
+
+        return new RamSummary(
+            TotalMB: totalMB,
+            Type: dominantType,
+            SpeedMHz: topSpeed,
+            SlotsUsed: modules.Count,
+            SlotsTotal: GetMemorySlotCount(modules.Count),
+            Modules: modules);
     }
 
-    public (long UsedMB, long TotalMB, long AvailableMB) GetRamRealtime()
+    /// <summary>Ranuras físicas de la placa, para saber si queda sitio para ampliar.</summary>
+    private int GetMemorySlotCount(int fallback)
     {
-        try
+        foreach (var obj in Query("SELECT MemoryDevices FROM Win32_PhysicalMemoryArray"))
         {
-            using var searcher = new ManagementObjectSearcher(
-                "SELECT FreePhysicalMemory, TotalVisibleMemorySize FROM Win32_OperatingSystem");
-            foreach (ManagementObject obj in searcher.Get())
-            {
-                long freeKB  = Convert.ToInt64(obj["FreePhysicalMemory"]  ?? 0L);
-                long totalKB = Convert.ToInt64(obj["TotalVisibleMemorySize"] ?? 0L);
-                long freeMB  = freeKB  / 1024;
-                long totalMB = totalKB / 1024;
-                if (_cachedTotalMB == 0) _cachedTotalMB = totalMB;
-                return (totalMB - freeMB, totalMB, freeMB);
-            }
+            var devices = ToInt(obj["MemoryDevices"]);
+            if (devices > 0) return devices;
         }
-        catch { }
+        return fallback;
+    }
+
+    private static string MemoryTypeName(int smbiosType) => smbiosType switch
+    {
+        20 => "DDR",
+        21 => "DDR2",
+        22 => "DDR2 FB-DIMM",
+        24 => "DDR3",
+        26 => "DDR4",
+        30 => "LPDDR",
+        31 => "LPDDR2",
+        32 => "LPDDR3",
+        33 => "LPDDR4",
+        34 => "DDR5",
+        35 => "LPDDR5",
+        _ => HardwareText.Unknown
+    };
+
+    private static string FormFactorName(int formFactor) => formFactor switch
+    {
+        7 => "SIMM",
+        8 => "DIMM",
+        9 => "TSOP",
+        11 => "RIMM",
+        12 => "SODIMM",
+        13 => "SRIMM",
+        _ => HardwareText.Unknown
+    };
+
+    public (long UsedMB, long TotalMB, long AvailableMB) GetRamUsage()
+    {
+        foreach (var obj in Query(
+            "SELECT FreePhysicalMemory, TotalVisibleMemorySize FROM Win32_OperatingSystem"))
+        {
+            long freeMB = ToLong(obj["FreePhysicalMemory"]) / 1024;
+            long totalMB = ToLong(obj["TotalVisibleMemorySize"]) / 1024;
+            if (_cachedTotalMB == 0) _cachedTotalMB = totalMB;
+            return (totalMB - freeMB, totalMB, freeMB);
+        }
         return (_cachedTotalMB, _cachedTotalMB, 0);
     }
 
+    // ────────────────────────── Sistema y placa ──────────────────────────
+
     public OsInfo GetOs()
     {
-        try
+        foreach (var obj in Query(
+            "SELECT Caption, BuildNumber, OSArchitecture, InstallDate FROM Win32_OperatingSystem"))
         {
-            using var searcher = new ManagementObjectSearcher(
-                "SELECT Caption, BuildNumber, OSArchitecture FROM Win32_OperatingSystem");
-            foreach (ManagementObject obj in searcher.Get())
+            var install = HardwareText.Clean(obj["InstallDate"], "");
+            if (install.Length >= 8)
             {
-                return new OsInfo(
-                    Name: obj["Caption"]?.ToString()?.Trim() ?? "Windows",
-                    Build: obj["BuildNumber"]?.ToString() ?? "?",
-                    Architecture: obj["OSArchitecture"]?.ToString() ?? "64-bit"
-                );
+                install = DateTime.TryParseExact(install[..8], "yyyyMMdd", null,
+                    System.Globalization.DateTimeStyles.None, out var parsed)
+                    ? parsed.ToString("dd/MM/yyyy")
+                    : HardwareText.Unknown;
             }
+            else install = HardwareText.Unknown;
+
+            return new OsInfo(
+                Name: HardwareText.Clean(obj["Caption"], "Windows"),
+                Build: HardwareText.Clean(obj["BuildNumber"]),
+                Architecture: HardwareText.Clean(obj["OSArchitecture"], "64-bit"),
+                InstallDate: install);
         }
-        catch { }
-        return new OsInfo("Windows", "?", "64-bit");
+        return new OsInfo("Windows", HardwareText.Unknown, "64-bit", HardwareText.Unknown);
+    }
+
+    public BoardInfo GetBoard()
+    {
+        string mbVendor = HardwareText.Unknown, mbProduct = HardwareText.Unknown, mbSerial = HardwareText.Unknown;
+        foreach (var obj in Query("SELECT Manufacturer, Product, SerialNumber FROM Win32_BaseBoard"))
+        {
+            mbVendor = HardwareText.Clean(obj["Manufacturer"]);
+            mbProduct = HardwareText.Clean(obj["Product"]);
+            mbSerial = HardwareText.Clean(obj["SerialNumber"]);
+            break;
+        }
+
+        string biosVendor = HardwareText.Unknown, biosVersion = HardwareText.Unknown, biosSerial = HardwareText.Unknown;
+        foreach (var obj in Query("SELECT Manufacturer, SMBIOSBIOSVersion, SerialNumber FROM Win32_BIOS"))
+        {
+            biosVendor = HardwareText.Clean(obj["Manufacturer"]);
+            biosVersion = HardwareText.Clean(obj["SMBIOSBIOSVersion"]);
+            biosSerial = HardwareText.Clean(obj["SerialNumber"]);
+            break;
+        }
+
+        string sysVendor = HardwareText.Unknown, sysModel = HardwareText.Unknown, sysUuid = HardwareText.Unknown;
+        foreach (var obj in Query("SELECT Vendor, Name, UUID FROM Win32_ComputerSystemProduct"))
+        {
+            sysVendor = HardwareText.Clean(obj["Vendor"]);
+            sysModel = HardwareText.Clean(obj["Name"]);
+            sysUuid = HardwareText.Clean(obj["UUID"]);
+            break;
+        }
+
+        return new BoardInfo(mbVendor, mbProduct, mbSerial,
+            biosVendor, biosVersion, biosSerial,
+            sysVendor, sysModel, sysUuid);
     }
 
     public TimeSpan GetUptime() => TimeSpan.FromMilliseconds(Environment.TickCount64);
 
-    public List<DiskInfo> GetDisks()
+    // ────────────────────────── Almacenamiento ──────────────────────────
+
+    public List<DiskInfo> GetVolumes()
     {
         var disks = new List<DiskInfo>();
-        try
+        foreach (var obj in Query(
+            "SELECT DeviceID, VolumeName, Size, FreeSpace, FileSystem FROM Win32_LogicalDisk WHERE DriveType=3"))
         {
-            using var searcher = new ManagementObjectSearcher(
-                "SELECT DeviceID, VolumeName, Size, FreeSpace FROM Win32_LogicalDisk WHERE DriveType=3");
-            foreach (ManagementObject obj in searcher.Get())
-            {
-                var letter = obj["DeviceID"]?.ToString() ?? "?";
-                var label  = obj["VolumeName"]?.ToString() ?? "";
-                var total  = Convert.ToInt64(obj["Size"]      ?? 0L) / (1024L * 1024 * 1024);
-                var free   = Convert.ToInt64(obj["FreeSpace"] ?? 0L) / (1024L * 1024 * 1024);
-                if (total > 0)
-                    disks.Add(new DiskInfo(letter, label, total, free));
-            }
+            var total = ToLong(obj["Size"]) / (1024L * 1024 * 1024);
+            if (total <= 0) continue;
+
+            disks.Add(new DiskInfo(
+                Letter: HardwareText.Clean(obj["DeviceID"], "?"),
+                Label: HardwareText.Clean(obj["VolumeName"], ""),
+                TotalGB: total,
+                FreeGB: ToLong(obj["FreeSpace"]) / (1024L * 1024 * 1024),
+                FileSystem: HardwareText.Clean(obj["FileSystem"], "")));
         }
-        catch { }
         return disks;
     }
 
-    public List<(string Name, int Pid, long MemoryMB)> GetTopProcesses(int count = 10)
+    /// <summary>Unidades físicas con su número de serie: la pieza que se roba.</summary>
+    public List<PhysicalDisk> GetPhysicalDisks()
+    {
+        var drives = new List<PhysicalDisk>();
+        foreach (var obj in Query(
+            "SELECT Model, SerialNumber, InterfaceType, MediaType, Size, FirmwareRevision FROM Win32_DiskDrive"))
+        {
+            drives.Add(new PhysicalDisk(
+                Model: HardwareText.Clean(obj["Model"]),
+                SerialNumber: HardwareText.Clean(obj["SerialNumber"]),
+                Interface: HardwareText.Clean(obj["InterfaceType"], ""),
+                MediaType: HardwareText.Clean(obj["MediaType"], ""),
+                CapacityGB: ToLong(obj["Size"]) / (1024L * 1024 * 1024),
+                FirmwareRevision: HardwareText.Clean(obj["FirmwareRevision"], "")));
+        }
+        return drives;
+    }
+
+    // ────────────────────────── Procesos ──────────────────────────
+
+    public List<ProcessRow> GetTopProcesses(int count = 12)
     {
         try
         {
             return Process.GetProcesses()
                 .Select(p =>
                 {
-                    try { return (p.ProcessName, p.Id, p.WorkingSet64 / (1024 * 1024)); }
-                    catch { return (p.ProcessName, p.Id, 0L); }
+                    try { return new ProcessRow(p.ProcessName, p.Id, p.WorkingSet64 / (1024 * 1024)); }
+                    catch { return new ProcessRow(p.ProcessName, p.Id, 0); }
                 })
-                .OrderByDescending(p => p.Item3)
+                .OrderByDescending(p => p.MemoryMB)
                 .Take(count)
                 .ToList();
         }
-        catch { return new(); }
+        catch { return new List<ProcessRow>(); }
     }
 
     public (bool Ok, string Message) KillProcess(int pid)
@@ -248,7 +390,7 @@ public class HardwareService
             var name = p.ProcessName;
             p.Kill(entireProcessTree: true);
             p.WaitForExit(2000);
-            return (true, $"Proceso '{name}' (PID {pid}) finalizado.");
+            return (true, $"Proceso «{name}» (PID {pid}) finalizado.");
         }
         catch (ArgumentException)
         {
@@ -256,8 +398,31 @@ public class HardwareService
         }
         catch (Exception ex)
         {
-            return (false, $"No se pudo finalizar (PID {pid}): {ex.Message}");
+            return (false, $"No se pudo finalizar el PID {pid}: {ex.Message}");
         }
+    }
+
+    // ────────────────────────── Red ──────────────────────────
+
+    public List<NetworkAdapter> GetAdapters()
+    {
+        var adapters = new List<NetworkAdapter>();
+        try
+        {
+            foreach (var ni in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (ni.NetworkInterfaceType is NetworkInterfaceType.Loopback or NetworkInterfaceType.Tunnel)
+                    continue;
+
+                var mac = string.Join(":", ni.GetPhysicalAddress()
+                    .GetAddressBytes().Select(b => b.ToString("X2")));
+                if (string.IsNullOrEmpty(mac)) continue;
+
+                adapters.Add(new NetworkAdapter(ni.Name, mac, ni.NetworkInterfaceType.ToString()));
+            }
+        }
+        catch { }
+        return adapters;
     }
 
     public NetSample GetNetworkSample()
@@ -287,7 +452,7 @@ public class HardwareService
             if (seconds <= 0) return new NetSample(0, 0);
 
             var down = (bytesRecv - _prevNetBytesRecv) * 8.0 / 1000.0 / seconds;
-            var up   = (bytesSent - _prevNetBytesSent) * 8.0 / 1000.0 / seconds;
+            var up = (bytesSent - _prevNetBytesSent) * 8.0 / 1000.0 / seconds;
 
             _prevNetBytesRecv = bytesRecv;
             _prevNetBytesSent = bytesSent;
@@ -298,6 +463,8 @@ public class HardwareService
         catch { return new NetSample(0, 0); }
     }
 
+    // ────────────────────────── Batería ──────────────────────────
+
     [StructLayout(LayoutKind.Sequential)]
     private struct SystemPowerStatus
     {
@@ -305,8 +472,8 @@ public class HardwareService
         public byte BatteryFlag;
         public byte BatteryLifePercent;
         public byte SystemStatusFlag;
-        public int  BatteryLifeTime;
-        public int  BatteryFullLifeTime;
+        public int BatteryLifeTime;
+        public int BatteryFullLifeTime;
     }
 
     [DllImport("kernel32.dll")]
@@ -320,30 +487,25 @@ public class HardwareService
             if (!GetSystemPowerStatus(out var s))
                 return new BatteryInfo(false, 0, false, "—");
 
-            // BatteryFlag 128 = no battery present
+            // BatteryFlag 128 = el equipo no tiene batería.
             if ((s.BatteryFlag & 128) != 0)
-                return new BatteryInfo(false, 0, s.ACLineStatus == 1, "Sin bateria");
+                return new BatteryInfo(false, 0, s.ACLineStatus == 1, "Sin batería");
 
             var onAc = s.ACLineStatus == 1;
             var percent = s.BatteryLifePercent == 255 ? 0 : s.BatteryLifePercent;
-            string status = onAc ? "Cargando" : "Descargando";
+            var status = onAc ? "Cargando" : "Con batería";
             if ((s.BatteryFlag & 8) != 0) status = "Cargando";
             return new BatteryInfo(true, percent, onAc, status);
         }
-        catch
-        {
-            return new BatteryInfo(false, 0, false, "—");
-        }
+        catch { return new BatteryInfo(false, 0, false, "—"); }
     }
+
+    // ────────────────────────── Mantenimiento ──────────────────────────
 
     public (long FreedMB, string Message) CleanTempFiles()
     {
         long freedBytes = 0;
-        var paths = new[]
-        {
-            Path.GetTempPath(),
-            @"C:\Windows\Temp"
-        };
+        var paths = new[] { Path.GetTempPath(), @"C:\Windows\Temp" };
 
         foreach (var dir in paths)
         {
@@ -355,72 +517,54 @@ public class HardwareService
                     try
                     {
                         var info = new FileInfo(file);
-                        if ((DateTime.UtcNow - info.LastWriteTimeUtc).TotalHours >= 1)
-                        {
-                            freedBytes += info.Length;
-                            File.Delete(file);
-                        }
+                        // Un archivo tocado hace menos de una hora puede seguir
+                        // en uso por una instalación en curso.
+                        if ((DateTime.UtcNow - info.LastWriteTimeUtc).TotalHours < 1) continue;
+                        freedBytes += info.Length;
+                        File.Delete(file);
                     }
-                    catch { /* archivo en uso o sin permisos */ }
+                    catch { /* en uso o sin permisos */ }
                 }
             }
             catch { }
         }
 
         long freedMB = freedBytes / (1024 * 1024);
-        string msg = freedMB > 0
-            ? $"Limpieza completada — se liberaron {freedMB} MB."
-            : "No habia archivos temporales que limpiar (o estaban en uso).";
-        return (freedMB, msg);
+        return (freedMB, freedMB > 0
+            ? $"Limpieza completada. Se liberaron {freedMB} MB."
+            : "No había temporales que borrar, o estaban en uso.");
     }
 
-    public string ExportReport(string path)
+    // ────────────────────────── Utilidades ──────────────────────────
+
+    /// <summary>
+    /// Ejecuta una consulta WQL y materializa el resultado. Si WMI falla —servicio
+    /// detenido, clase ausente en esta edición de Windows, permisos— se devuelve
+    /// una lista vacía y quien llama usa sus valores por defecto.
+    /// </summary>
+    private static List<ManagementObject> Query(string wql)
     {
-        var cpu = GetCpu();
-        var gpu = GetGpu();
-        var ram = GetRamStatic();
-        var os  = GetOs();
-        var disks = GetDisks();
-        var (usedMB, totalMB, freeMB) = GetRamRealtime();
-        var uptime = GetUptime();
-        var bat = GetBattery();
+        var rows = new List<ManagementObject>();
+        try
+        {
+            using var searcher = new ManagementObjectSearcher(wql);
+            using var results = searcher.Get();
+            foreach (var item in results)
+                if (item is ManagementObject obj) rows.Add(obj);
+        }
+        catch { }
+        return rows;
+    }
 
-        var sb = new StringBuilder();
-        sb.AppendLine("=== SYSTEM MONITOR — INFORME ===");
-        sb.AppendLine($"Generado: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-        sb.AppendLine($"Equipo:   {Environment.MachineName}");
-        sb.AppendLine($"Usuario:  {Environment.UserName}");
-        sb.AppendLine($"Uptime:   {(int)uptime.TotalDays}d {uptime.Hours}h {uptime.Minutes}m");
-        sb.AppendLine();
-        sb.AppendLine("[CPU]");
-        sb.AppendLine($"  {cpu.Name}");
-        sb.AppendLine($"  {cpu.Cores} nucleos / {cpu.Threads} hilos @ {cpu.MaxMHz} MHz");
-        sb.AppendLine();
-        sb.AppendLine("[GPU]");
-        sb.AppendLine($"  {gpu.Name}");
-        sb.AppendLine($"  VRAM: {(gpu.VramMB > 0 ? $"{gpu.VramMB / 1024.0:F0} GB" : "?")}");
-        sb.AppendLine();
-        sb.AppendLine("[RAM]");
-        sb.AppendLine($"  Total:      {ram.TotalMB} MB ({ram.TotalMB / 1024.0:F1} GB)");
-        sb.AppendLine($"  Tipo:       {ram.Type} @ {ram.SpeedMHz} MHz");
-        sb.AppendLine($"  Modulos:    {ram.Slots}");
-        sb.AppendLine($"  En uso:     {usedMB} MB ({(totalMB > 0 ? usedMB * 100.0 / totalMB : 0):F1} %)");
-        sb.AppendLine($"  Disponible: {freeMB} MB");
-        sb.AppendLine();
-        sb.AppendLine("[SO]");
-        sb.AppendLine($"  {os.Name}");
-        sb.AppendLine($"  Build {os.Build}  —  {os.Architecture}");
-        sb.AppendLine();
-        sb.AppendLine("[BATERIA]");
-        sb.AppendLine(bat.Present
-            ? $"  {bat.Percent}%  —  {bat.Status}"
-            : "  No presente (equipo de escritorio)");
-        sb.AppendLine();
-        sb.AppendLine("[DISCOS]");
-        foreach (var d in disks)
-            sb.AppendLine($"  {d.Letter} {d.Label,-14}  {d.UsedGB,5} / {d.TotalGB,5} GB  ({d.UsedPercent:F1}%)");
+    private static int ToInt(object? value)
+    {
+        try { return value is null ? 0 : Convert.ToInt32(value); }
+        catch { return 0; }
+    }
 
-        File.WriteAllText(path, sb.ToString());
-        return path;
+    private static long ToLong(object? value)
+    {
+        try { return value is null ? 0 : Convert.ToInt64(value); }
+        catch { return 0; }
     }
 }

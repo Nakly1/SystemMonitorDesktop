@@ -7,7 +7,7 @@
   "targets": {
     ".NETCoreApp,Version=v8.0": {},
     ".NETCoreApp,Version=v8.0/win-x64": {
-      "SystemMonitorDesktop/1.0.0": {
+      "SystemMonitorDesktop/2.0.0": {
         "dependencies": {
           "System.Management": "8.0.0"
         },
@@ -30,7 +30,7 @@
     }
   },
   "libraries": {
-    "SystemMonitorDesktop/1.0.0": {
+    "SystemMonitorDesktop/2.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

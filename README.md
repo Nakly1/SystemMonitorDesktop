@@ -2,12 +2,13 @@
 
 # System Monitor Desktop
 
-Monitor de hardware para **Windows 10 / 11**. Interfaz oscura, rapida y sin instalador.
-Muestra en tiempo real RAM, CPU, GPU, red, bateria, discos y procesos — todo en una ventana.
+Monitor de hardware para **Windows 10 / 11**. Interfaz oscura, rápida y sin instalador.
+Muestra en tiempo real RAM, CPU, GPU, red, batería, discos y procesos — y levanta **actas de
+hardware** con el número de serie de cada pieza, para saber si te cambiaron algo.
 
-**v1.0 — Primera version publica**
+**v2.0 — Rediseño completo y actas de hardware**
 
-[![Descargar](https://img.shields.io/badge/⬇%20Descargar-v1.0-238636?style=for-the-badge)](AppRelease/SystemMonitorDesktop.exe)
+[![Descargar](https://img.shields.io/badge/⬇%20Descargar-v2.0-7C3AED?style=for-the-badge)](AppRelease/SystemMonitorDesktop.exe)
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/es-es/download/dotnet/8.0)
 [![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-0078D4?style=for-the-badge&logo=windows)](#)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](#licencia)
@@ -29,27 +30,49 @@ de tu equipo.
 
 ---
 
-## Caracteristicas
+## Características
 
-### En tiempo real (refresco cada 2 s)
-- **RAM** — uso total, disponible, porcentaje y **mini grafico historico** de los ultimos 60 s
-- **CPU** — uso global en % con barra de progreso
-- **Red** — velocidad de bajada y subida en Kbps / Mbps
-- **Bateria** — porcentaje y estado (cargando / descargando), se oculta en equipos de sobremesa
-- **Uptime** — tiempo que lleva encendido tu equipo
-- **Top 10 procesos** por uso de RAM, con **boton para finalizar** cualquiera de ellos
+La app se organiza en seis secciones con barra lateral.
 
-### Informacion del sistema
-- **CPU** — modelo, nucleos, hilos y velocidad maxima
-- **GPU** — modelo y VRAM (con fallback al registro para GPUs de mas de 4 GB)
-- **RAM** — tipo (DDR3 / DDR4 / DDR5), velocidad en MHz y modulos instalados
-- **Sistema operativo** — nombre, build, arquitectura y nombre del equipo
-- **Discos** — espacio usado y libre de cada unidad local
+### Resumen
+Memoria y procesador con su cifra grande, barra y gráfico de los últimos 2 minutos; gráficos,
+red, energía y la ficha de identidad del equipo (fabricante, modelo, placa base, BIOS).
 
-### Acciones utiles
-- **Limpiar temporales** — borra archivos de `%TEMP%` y `C:\Windows\Temp` con mas de 1 h
-- **Forzar Garbage Collection** — libera memoria del propio proceso .NET
-- **Exportar informe** — genera un `.txt` con todo el estado del sistema
+### Memoria
+- Uso en vivo con historial
+- **Cada módulo físico por separado**: fabricante, **número de parte**, **número de serie**,
+  ranura, banco, capacidad, tipo (DDR3 / DDR4 / DDR5 / LPDDR5), velocidad nominal y real,
+  formato (DIMM / SODIMM) y voltaje
+- Ranuras usadas y libres, para saber si se puede ampliar
+- Si la BIOS sólo publica el código JEDEC del fabricante (`802C`, `80CE`…), se traduce a la
+  marca real (Micron, Samsung, SK hynix…)
+
+### Almacenamiento
+Volúmenes con espacio ocupado, y las **unidades físicas** reales con su número de serie,
+interfaz y firmware.
+
+### Procesos
+Los que más memoria consumen, con peso relativo y botón para finalizarlos.
+
+### Evidencia de hardware
+La razón principal de la v2. Antes de dejar el equipo en un servicio técnico:
+
+1. **Generar acta** — se guardan dos archivos: un `.smev.json` para verificar automáticamente y
+   un `.txt` imprimible con espacio para firmar en la entrega. El acta registra el número de
+   serie de procesador, cada módulo de RAM, tarjetas gráficas, discos, placa base, BIOS y MAC
+   de cada adaptador de red.
+2. Cada acta lleva una **huella SHA-256**. Si alguien edita el archivo después, la huella deja
+   de cuadrar y la app lo avisa.
+3. **Verificar el equipo** — al recogerlo, se carga el acta y la app compara pieza por pieza:
+   marca lo que sigue igual, lo que **cambió** (misma ranura, otro serial), lo que **falta** y
+   lo que **apareció**. El resultado se puede exportar a `.txt`.
+
+Las actas se guardan en `Documentos\System Monitor\Evidencias`.
+
+### Herramientas
+- **Limpiar temporales** — borra archivos de `%TEMP%` y `C:\Windows\Temp` con más de 1 h
+- **Compactar memoria** — recolector de basura de .NET del propio proceso
+- **Exportar informe** — un `.txt` legible con todo el estado del sistema
 
 ---
 
@@ -79,42 +102,33 @@ El ejecutable queda en `AppRelease/SystemMonitorDesktop.exe`.
 
 ---
 
-## Capturas
+## Diseño
 
-La app tiene una unica ventana organizada en tarjetas:
+Sistema visual propio, en negro, morado profundo y blanco cálido:
 
-```
-+-----------------------------------------------------------+
-|  SM  System Monitor  [v1.0]      Uptime 2d 04h | HH:MM:SS |
-+-----------------------------------------------------------+
-|                                                           |
-|   MEMORIA RAM — TIEMPO REAL                               |
-|   12.4 GB / 16.0 GB                     77.5%             |
-|   [======================================----]   /-\-/‾\ |
-|                                                           |
-|   [ CPU  42.1% ]                     [ GPU  NVIDIA ... ] |
-|                                                           |
-|   [ RAM specs ]   [ OS ]   [ RED ]   [ BATERIA 87% ]     |
-|                                                           |
-|   [ ALMACENAMIENTO ]                                      |
-|   [ TOP 10 PROCESOS ]            [finalizar]              |
-|   [ ACCIONES: limpiar / GC / exportar ]                   |
-+-----------------------------------------------------------+
-```
+- Superficies en negro con matiz violeta (`#0A0810` … `#1A1526`) en lugar de negro puro, que
+  produce halación y cansa la vista en pantallas OLED
+- Un único acento saturado (violeta `#8B5CF6`) sobre una base desaturada
+- Tipografía **Segoe UI Variable Display / Text**, el equivalente más cercano a SF Pro en
+  Windows: titulares en *Display*, cuerpo en *Text*, cifras tabulares en toda métrica en vivo
+  para que los dígitos no bailen entre refrescos
+- Sentence case en todos los títulos, tres pesos como máximo, iconografía dibujada sobre una
+  retícula propia de 24 px
+- Chrome de ventana personalizado con esquinas redondeadas nativas de Windows 11
 
 ---
 
-## Como funciona por dentro
+## Cómo funciona por dentro
 
-- **WPF** para la interfaz (XAML + code-behind, sin MVVM pesado)
-- **WMI** (`System.Management`) para leer CPU, RAM, GPU, discos y SO
-- **Registro de Windows** para detectar VRAM correctamente en GPUs modernas
-- **PerformanceCounter** para el uso de CPU en tiempo real
-- **NetworkInterface** para contadores de red
-- **P/Invoke `GetSystemPowerStatus`** para la bateria (sin depender de WinForms)
-- **`DispatcherTimer`** a 2 s para refrescar la UI sin trabarla
-
-Todo corre sobre **.NET 8** en un unico proyecto — simple y facil de modificar.
+- **WPF** sobre .NET 8 (XAML + code-behind, sin MVVM pesado)
+- **WMI** (`System.Management`) para CPU, RAM por módulo, GPU, discos, placa base, BIOS y SO
+- **Registro de Windows** para detectar VRAM correctamente en GPUs de más de 4 GB
+- **PerformanceCounter** para el uso de CPU
+- **NetworkInterface** para contadores de red y direcciones MAC
+- **P/Invoke `GetSystemPowerStatus`** para la batería
+- **`System.Text.Json` + SHA-256** para las actas de hardware
+- Un solo `MonitorService` con un `DispatcherTimer` a 2 s: muestrea fuera del hilo de interfaz
+  y reparte la lectura por evento a las vistas abiertas
 
 ---
 
@@ -122,13 +136,30 @@ Todo corre sobre **.NET 8** en un unico proyecto — simple y facil de modificar
 
 ```
 SystemMonitorDesktop/
-├── App.xaml / App.xaml.cs         ← entry point de WPF
-├── MainWindow.xaml                ← UI (tarjetas, estilos, layout)
-├── MainWindow.xaml.cs             ← logica de UI y timer
+├── App.xaml                       ← combina los diccionarios de tema
+├── MainWindow.xaml(.cs)           ← shell: chrome, barra lateral, navegación
+├── Theme/
+│   ├── Palette.xaml               ← colores y degradados
+│   ├── Typography.xaml            ← escala tipográfica
+│   └── Controls.xaml              ← tarjetas, botones, medidores, iconos
+├── Views/
+│   ├── OverviewView               ← Resumen
+│   ├── MemoryView                 ← Memoria y módulos físicos
+│   ├── StorageView                ← Volúmenes y unidades
+│   ├── ProcessesView              ← Procesos
+│   ├── EvidenceView               ← Actas de hardware
+│   └── ToolsView                  ← Mantenimiento
+├── Controls/
+│   ├── Sparkline.cs               ← gráfico compacto por OnRender
+│   └── UiKit.cs                   ← fichas técnicas construidas en código
 ├── Services/
-│   └── HardwareService.cs         ← toda la lectura de hardware
-├── app.manifest                   ← manifiesto de ejecucion
-├── SystemMonitorDesktop.csproj    ← configuracion del proyecto
+│   ├── HardwareModels.cs          ← registros de datos
+│   ├── HardwareService.cs         ← todas las consultas WMI
+│   ├── JedecVendors.cs            ← códigos JEDEC → marca de RAM
+│   ├── EvidenceService.cs         ← capturar, firmar y comparar actas
+│   ├── SystemReport.cs            ← informe legible del sistema
+│   ├── MonitorService.cs          ← muestreo periódico
+│   └── AppServices.cs             ← servicios compartidos
 └── AppRelease/                    ← build publicado listo para usar
     └── SystemMonitorDesktop.exe
 ```
@@ -137,15 +168,14 @@ SystemMonitorDesktop/
 
 ## Roadmap
 
-Ideas para futuras versiones (v1.x / v2):
-
-- [ ] Uso de CPU por nucleo individual
-- [ ] Temperaturas de CPU / GPU (via LibreHardwareMonitor)
-- [ ] Grafico historico tambien para CPU y red
+- [ ] Uso de CPU por núcleo individual
+- [ ] Temperaturas de CPU / GPU (vía LibreHardwareMonitor)
+- [ ] Gráfico histórico también para red
 - [ ] Bandeja de sistema (minimizar al tray)
 - [ ] Tema claro / modo auto
-- [ ] Alertas configurables (ej. avisar si RAM > 90% durante 30 s)
-- [ ] Localizacion a ingles
+- [ ] Alertas configurables (ej. avisar si RAM > 90 % durante 30 s)
+- [ ] Firma digital del acta con certificado del usuario
+- [ ] Localización a inglés
 
 Los PRs con mejoras son bienvenidos.
 
@@ -154,8 +184,18 @@ Los PRs con mejoras son bienvenidos.
 ## Preguntas frecuentes
 
 **¿Necesita permisos de administrador?**
-No para el uso normal. Solo al limpiar `C:\Windows\Temp`, algunos archivos bloqueados no se podran
+No para el uso normal. Sólo al limpiar `C:\Windows\Temp` algunos archivos bloqueados no se podrán
 borrar sin ejecutarla como admin — pero la app funciona igual.
+
+**¿El acta de hardware sirve como prueba legal?**
+No es un documento con validez jurídica por sí solo. Es una constancia técnica fechada y firmada
+con SHA-256 de lo que había en el equipo en ese momento: sirve para reclamar con datos concretos
+(«este módulo tenía el serial X») y para detectar el cambiazo. Imprime el `.txt`, fírmalo con
+quien recibe el equipo y guarda el `.smev.json` para la verificación automática.
+
+**¿Qué pasa si una pieza no tiene número de serie?**
+Algunas BIOS no lo publican. En ese caso la app lo dice explícitamente y compara esa pieza por
+ranura y modelo, que es menos concluyente pero sigue detectando sustituciones.
 
 **¿Funciona en Linux / macOS?**
 No. Usa WMI y el registro de Windows, asi que es solo para Windows 10 / 11.
