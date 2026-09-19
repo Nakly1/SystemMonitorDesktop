@@ -1,0 +1,42 @@
+<UserControl x:Class="SystemMonitorDesktop.Views.DisplayView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="Transparent">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="30,24,26,30">
+            <Grid>
+                <StackPanel>
+                    <TextBlock Text="Pantalla" Style="{StaticResource T.Title}"/>
+                    <TextBlock x:Name="SubtitleText" Style="{StaticResource T.Secondary}" Margin="0,4,0,20"
+                               Text="Leyendo las pantallas…"/>
+                </StackPanel>
+                <Button Content="Configuración de pantalla" Style="{StaticResource BtnGhost}" HorizontalAlignment="Right"
+                        VerticalAlignment="Top" Click="Settings_Click"/>
+            </Grid>
+            <StackPanel x:Name="DisplaysPanel"/>
+
+            <Border Style="{StaticResource Card}" Margin="0,4,0,0">
+                <StackPanel>
+                    <TextBlock Text="¿Qué significa cada cosa?" Style="{StaticResource T.Headline}" Margin="0,0,0,12"/>
+                    <TextBlock Style="{StaticResource T.Secondary}" Margin="0,0,0,8" TextWrapping="Wrap">
+                        <Run FontWeight="SemiBold" Foreground="{StaticResource Br.TextPrimary}" Text="Hz (frecuencia): "/>
+                        <Run Text="cuántas veces por segundo se redibuja la imagen. Con más Hz el ratón, el desplazamiento y los juegos se ven más fluidos. En portátiles gasta algo más de batería."/>
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource T.Secondary}" Margin="0,0,0,8" TextWrapping="Wrap">
+                        <Run FontWeight="SemiBold" Foreground="{StaticResource Br.TextPrimary}" Text="Resolución: "/>
+                        <Run Text="cuántos puntos tiene la imagen. La nativa es la real del panel: usar otra se ve borrosa."/>
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource T.Secondary}" Margin="0,0,0,8" TextWrapping="Wrap">
+                        <Run FontWeight="SemiBold" Foreground="{StaticResource Br.TextPrimary}" Text="Escala: "/>
+                        <Run Text="el tamaño del texto y los iconos. No cambia la nitidez, sólo lo grande que se ve todo."/>
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource T.Secondary}" TextWrapping="Wrap">
+                        <Run FontWeight="SemiBold" Foreground="{StaticResource Br.TextPrimary}" Text="HDR y bits de color: "/>
+                        <Run Text="más brillo y colores más ricos en vídeos y juegos compatibles. 8 bits es lo normal; 10 bits muestra degradados más suaves."/>
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -266,7 +266,7 @@ public partial class EvidenceView : UserControl
 
         var pill = new Border
         {
-            CornerRadius = new CornerRadius(999),
+            CornerRadius = new CornerRadius(6),
             BorderBrush = brush,
             BorderThickness = new Thickness(1),
             Background = Tint(brush),

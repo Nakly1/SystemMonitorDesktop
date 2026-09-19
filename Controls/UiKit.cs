@@ -111,6 +111,29 @@ public static class UiKit
         _ => $"{megabytes:N0} MB"
     };
 
+    /// <summary>Bytes a la unidad que toque: 832 MB, 49,3 GB, 1,2 TB.</summary>
+    public static string FormatSize(long bytes)
+    {
+        const double KB = 1024, MB = KB * 1024, GB = MB * 1024, TB = GB * 1024;
+        return bytes switch
+        {
+            >= (long)TB => $"{bytes / TB:0.0} TB",
+            >= (long)GB => $"{bytes / GB:0.0} GB",
+            >= (long)(100 * MB) => $"{bytes / MB:0} MB",
+            >= (long)MB => $"{bytes / MB:0.0} MB",
+            >= (long)KB => $"{bytes / KB:0} KB",
+            _ => $"{bytes} B"
+        };
+    }
+
+    /// <summary>845.312 → «845K»; 1.234.567 → «1,2 M». Para recuentos de ítems.</summary>
+    public static string CompactCount(long count) => count switch
+    {
+        >= 1_000_000 => $"{count / 1_000_000.0:0.#} M",
+        >= 10_000 => $"{count / 1000:N0}K",
+        _ => $"{count:N0}"
+    };
+
     /// <summary>
     /// «1 módulo» / «2 módulos». Escribir "módulo(s)" es más rápido de programar
     /// y peor de leer; la app habla como una persona.

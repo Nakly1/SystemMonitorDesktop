@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>SystemMonitorDesktop</RootNamespace>
-    <AssemblyName>SystemMonitorDesktop</AssemblyName>
+    <AssemblyName>Barep</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <!-- Sin esto, `dotnet restore` no genera destino para net8.0-windows/win-x64
          y publicar despues con ese RID falla con NETSDK1047. -->
@@ -14,15 +14,27 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <Product>System Monitor</Product>
-    <AssemblyTitle>System Monitor</AssemblyTitle>
-    <Description>Monitor de sistema y actas de hardware para Windows.</Description>
-    <Company>System Monitor</Company>
-    <Version>2.0.0</Version>
-    <FileVersion>2.0.0.0</FileVersion>
-    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <Product>Barep</Product>
+    <AssemblyTitle>Barep</AssemblyTitle>
+    <Description>Monitor, limpieza y optimización de Windows.</Description>
+    <Company>Barep</Company>
+    <Version>2.2.0</Version>
+    <FileVersion>2.2.0.0</FileVersion>
+    <AssemblyVersion>2.2.0.0</AssemblyVersion>
     <Copyright>Copyright © 2026</Copyright>
     <NeutralLanguage>es</NeutralLanguage>
+  </PropertyGroup>
+
+  <!--
+    Publicación en un solo Barep.exe que funciona sin instalar nada (ni .NET):
+      dotnet publish -c Release -r win-x64 -o publish
+  -->
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' != ''">
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <DebugType>none</DebugType>
   </PropertyGroup>
 
   <ItemGroup>

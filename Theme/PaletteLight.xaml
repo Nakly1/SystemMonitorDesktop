@@ -2,44 +2,44 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!--
-        Tema oscuro: negro puro con acentos morados y texto blanco.
+        Tema claro: blanco con acentos morados; los bordes fuertes y el texto van en negro.
         Las dos paletas (Palette.xaml y PaletteLight.xaml) tienen exactamente las
         mismas claves: el tema se cambia sustituyendo una por otra.
     -->
 
     <!-- Superficies -->
-    <Color x:Key="C.Void">#FF000000</Color>
-    <Color x:Key="C.Base">#FF000000</Color>
-    <Color x:Key="C.Sidebar">#FF070708</Color>
-    <Color x:Key="C.Surface">#FF0F0F11</Color>
-    <Color x:Key="C.SurfaceRaised">#FF18181B</Color>
-    <Color x:Key="C.SurfaceHover">#FF1F1F23</Color>
-    <Color x:Key="C.Well">#FF0A0A0C</Color>
+    <Color x:Key="C.Void">#FFFFFFFF</Color>
+    <Color x:Key="C.Base">#FFFFFFFF</Color>
+    <Color x:Key="C.Sidebar">#FFF5F5F7</Color>
+    <Color x:Key="C.Surface">#FFFFFFFF</Color>
+    <Color x:Key="C.SurfaceRaised">#FFF2F2F5</Color>
+    <Color x:Key="C.SurfaceHover">#FFEBEBEF</Color>
+    <Color x:Key="C.Well">#FFF7F7F9</Color>
 
     <!-- Trazos -->
-    <Color x:Key="C.Stroke">#FF232326</Color>
-    <Color x:Key="C.StrokeSoft">#FF19191C</Color>
-    <Color x:Key="C.StrokeStrong">#FF34343A</Color>
+    <Color x:Key="C.Stroke">#FFE3E3E8</Color>
+    <Color x:Key="C.StrokeSoft">#FFEDEDF0</Color>
+    <Color x:Key="C.StrokeStrong">#FF141416</Color>
 
     <!-- Texto -->
-    <Color x:Key="C.TextPrimary">#FFF5F5F7</Color>
-    <Color x:Key="C.TextSecondary">#FFA1A1AA</Color>
-    <Color x:Key="C.TextTertiary">#FF6C6C75</Color>
-    <Color x:Key="C.TextInverse">#FF000000</Color>
+    <Color x:Key="C.TextPrimary">#FF0A0A0C</Color>
+    <Color x:Key="C.TextSecondary">#FF55555E</Color>
+    <Color x:Key="C.TextTertiary">#FF8E8E96</Color>
+    <Color x:Key="C.TextInverse">#FFFFFFFF</Color>
 
     <!-- Acento morado -->
-    <Color x:Key="C.Accent">#FF8B5CF6</Color>
-    <Color x:Key="C.AccentBright">#FFA78BFA</Color>
-    <Color x:Key="C.AccentDeep">#FF6D28D9</Color>
-    <Color x:Key="C.AccentPressed">#FF5B21B6</Color>
-    <Color x:Key="C.AccentTint">#FF17141F</Color>
-    <Color x:Key="C.AccentTintStrong">#FF201A2E</Color>
+    <Color x:Key="C.Accent">#FF7C3AED</Color>
+    <Color x:Key="C.AccentBright">#FF6D28D9</Color>
+    <Color x:Key="C.AccentDeep">#FF5B21B6</Color>
+    <Color x:Key="C.AccentPressed">#FF4C1D95</Color>
+    <Color x:Key="C.AccentTint">#FFF4F0FE</Color>
+    <Color x:Key="C.AccentTintStrong">#FFECE6FD</Color>
 
     <!-- Estados -->
-    <Color x:Key="C.Ok">#FF9F7BF0</Color>
-    <Color x:Key="C.Warn">#FFE0A44A</Color>
-    <Color x:Key="C.Critical">#FFF2556A</Color>
-    <Color x:Key="C.Positive">#FF5FD6A4</Color>
+    <Color x:Key="C.Ok">#FF7C3AED</Color>
+    <Color x:Key="C.Warn">#FFB26B00</Color>
+    <Color x:Key="C.Critical">#FFD0243E</Color>
+    <Color x:Key="C.Positive">#FF0F8A62</Color>
 
     <!-- ── Brochas ── -->
     <SolidColorBrush x:Key="Br.Void" Color="{StaticResource C.Void}"/>
@@ -71,15 +71,15 @@
     <SolidColorBrush x:Key="Br.Positive" Color="{StaticResource C.Positive}"/>
 
     <!-- Piezas de control que dependen del tema -->
-    <SolidColorBrush x:Key="Br.Track" Color="#FF232327"/>
-    <SolidColorBrush x:Key="Br.ScrollThumb" Color="#FF2E2E33"/>
-    <SolidColorBrush x:Key="Br.NavHover" Color="#FF121215"/>
-    <SolidColorBrush x:Key="Br.SwitchOff" Color="#FF2A2A2F"/>
-    <SolidColorBrush x:Key="Br.SwitchKnobOff" Color="#FFA1A1AA"/>
-    <SolidColorBrush x:Key="Br.Option" Color="#FF0F0F11"/>
-    <SolidColorBrush x:Key="Br.Backdrop" Color="#CC000000"/>
-    <SolidColorBrush x:Key="Br.PositiveTint" Color="#1F5FD6A4"/>
-    <SolidColorBrush x:Key="Br.WarnTint" Color="#1FE0A44A"/>
+    <SolidColorBrush x:Key="Br.Track" Color="#FFE6E6EB"/>
+    <SolidColorBrush x:Key="Br.ScrollThumb" Color="#FFCFCFD6"/>
+    <SolidColorBrush x:Key="Br.NavHover" Color="#FFEDEDF1"/>
+    <SolidColorBrush x:Key="Br.SwitchOff" Color="#FFDCDCE2"/>
+    <SolidColorBrush x:Key="Br.SwitchKnobOff" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="Br.Option" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="Br.Backdrop" Color="#99101014"/>
+    <SolidColorBrush x:Key="Br.PositiveTint" Color="#1A0F8A62"/>
+    <SolidColorBrush x:Key="Br.WarnTint" Color="#1AB26B00"/>
 
     <!-- Degradados -->
     <LinearGradientBrush x:Key="Br.AccentGradient" StartPoint="0,0" EndPoint="1,1">
@@ -88,21 +88,21 @@
     </LinearGradientBrush>
 
     <LinearGradientBrush x:Key="Br.HeroGlow" StartPoint="0,0" EndPoint="1,0.7">
-        <GradientStop Color="#FF141417" Offset="0"/>
-        <GradientStop Color="#FF0F0F11" Offset="0.6"/>
-        <GradientStop Color="#FF0F0F11" Offset="1"/>
+        <GradientStop Color="#FFFFFFFF" Offset="0"/>
+        <GradientStop Color="#FFFFFFFF" Offset="0.6"/>
+        <GradientStop Color="#FFFFFFFF" Offset="1"/>
     </LinearGradientBrush>
 
     <LinearGradientBrush x:Key="Br.SidebarFade" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#FF060509" Offset="0"/>
-        <GradientStop Color="#FF060509" Offset="1"/>
+        <GradientStop Color="#FFF6F5F9" Offset="0"/>
+        <GradientStop Color="#FFF6F5F9" Offset="1"/>
     </LinearGradientBrush>
 
     <!-- Escenario del mapa de la Lupa: morado en los dos temas para que las burbujas luzcan -->
     <RadialGradientBrush x:Key="Br.LensStage" Center="0.5,0.52" GradientOrigin="0.5,0.52" RadiusX="0.62" RadiusY="0.7">
-        <GradientStop Color="#FF28194A" Offset="0"/>
-        <GradientStop Color="#FF150E28" Offset="0.5"/>
-        <GradientStop Color="#FF07060B" Offset="1"/>
+        <GradientStop Color="#FF8B5CF6" Offset="0"/>
+        <GradientStop Color="#FF5B21B6" Offset="0.5"/>
+        <GradientStop Color="#FF2E1065" Offset="1"/>
     </RadialGradientBrush>
 
 </ResourceDictionary>

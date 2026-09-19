@@ -1,9 +1,9 @@
 <Application x:Class="SystemMonitorDesktop.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             StartupUri="MainWindow.xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Application.Resources>
         <ResourceDictionary>
+            <!-- El tema (Palette.xaml o PaletteLight.xaml) lo carga ThemeManager al arrancar. -->
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Theme/Palette.xaml"/>
                 <ResourceDictionary Source="Theme/Typography.xaml"/>

@@ -12,17 +12,6 @@ public partial class ToolsView : UserControl
 {
     public ToolsView() => InitializeComponent();
 
-    private async void CleanButton_Click(object sender, RoutedEventArgs e)
-    {
-        CleanButton.IsEnabled = false;
-        SetStatus("Recorriendo las carpetas temporales…", "Br.TextSecondary");
-
-        var (freedMB, message) = await Task.Run(AppServices.Hardware.CleanTempFiles);
-
-        SetStatus(message, freedMB > 0 ? "Br.Positive" : "Br.TextSecondary");
-        CleanButton.IsEnabled = true;
-    }
-
     private void GcButton_Click(object sender, RoutedEventArgs e)
     {
         GcButton.IsEnabled = false;

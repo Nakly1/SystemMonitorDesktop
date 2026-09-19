@@ -14,7 +14,7 @@ public static class SystemReport
         var rule = new string('─', 62);
 
         sb.AppendLine(rule);
-        sb.AppendLine("  SYSTEM MONITOR — INFORME DEL SISTEMA");
+        sb.AppendLine("  BAREP — INFORME DEL SISTEMA");
         sb.AppendLine(rule);
         sb.AppendLine($"  Generado   {DateTime.Now:dddd d 'de' MMMM 'de' yyyy, HH:mm:ss}");
         sb.AppendLine($"  Equipo     {Environment.MachineName}");

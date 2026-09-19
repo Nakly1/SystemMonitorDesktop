@@ -23,6 +23,14 @@ public partial class MainWindow : Window
 
     private readonly DispatcherTimer _clock = new() { Interval = TimeSpan.FromSeconds(1) };
 
+    /// <summary>Mientras se cambia de tema conviven dos ventanas: la vieja no debe parar el monitor.</summary>
+    public static bool IsSwitchingTheme { get; set; }
+
+    /// <summary>Sección con la que abrir (tras cambiar de tema o relanzar como administrador).</summary>
+    public string? StartPage { get; set; }
+
+    private string _currentPage = "NavOverview";
+
     public MainWindow()
     {
         InitializeComponent();
@@ -35,6 +43,14 @@ public partial class MainWindow : Window
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
         Navigate(NavOverview);
+        UpdateThemeButton();
+
+        // «Abrir como administrador» relanza la app con este argumento para volver a Optimizar.
+        var args = Environment.GetCommandLineArgs();
+        if (StartPage is null && args.Any(a => a.Equals("optimizar", StringComparison.OrdinalIgnoreCase)))
+            StartPage = nameof(NavOptimize);
+        if (StartPage is not null && FindName(StartPage) is RadioButton start)
+            start.IsChecked = true;
 
         _clock.Tick += (_, _) => UpdateClock();
         _clock.Start();
@@ -48,7 +64,7 @@ public partial class MainWindow : Window
     private void OnClosed(object? sender, EventArgs e)
     {
         AppServices.Monitor.Sampled -= OnSampled;
-        AppServices.Monitor.Stop();
+        if (!IsSwitchingTheme) AppServices.Monitor.Stop();
         _clock.Stop();
     }
 
@@ -63,6 +79,7 @@ public partial class MainWindow : Window
     private void Navigate(RadioButton button)
     {
         var key = button.Name;
+        _currentPage = key;
         if (!_pages.TryGetValue(key, out var page))
         {
             page = CreatePage(key);
@@ -76,11 +93,25 @@ public partial class MainWindow : Window
     {
         "NavMemory" => new MemoryView(),
         "NavStorage" => new StorageView(),
+        "NavLens" => new LupaView(),
+        "NavOptimize" => new OptimizeView(),
+        "NavPc" => new PcView(),
+        "NavDisplay" => new DisplayView(),
         "NavProcesses" => new ProcessesView(),
         "NavEvidence" => new EvidenceView(),
         "NavTools" => new ToolsView(),
         _ => new OverviewView()
     };
+
+    // ────────────────────────── Tema ──────────────────────────
+
+    private void Theme_Click(object sender, RoutedEventArgs e) => ThemeManager.Toggle(_currentPage);
+
+    private void UpdateThemeButton()
+    {
+        ThemeText.Text = ThemeManager.IsLight ? "Tema oscuro" : "Tema claro";
+        ThemeIcon.Data = (System.Windows.Media.Geometry)FindResource(ThemeManager.IsLight ? "Glyph.Moon" : "Glyph.Sun");
+    }
 
     // ────────────────────────── Barra superior ──────────────────────────
 

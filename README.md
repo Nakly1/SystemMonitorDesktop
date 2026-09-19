@@ -1,15 +1,16 @@
 <div align="center">
 
-# System Monitor Desktop
+# Barep
 
-Monitor de hardware para **Windows 10 / 11**. Interfaz oscura, rápida y sin instalador.
-Muestra en tiempo real RAM, CPU, GPU, red, batería, discos y procesos — y levanta **actas de
-hardware** con el número de serie de cada pieza, para saber si te cambiaron algo.
+Monitor, limpieza y optimización para **Windows 10 / 11**. Un solo `.exe`, sin instalar nada.
 
-**v2.0 — Rediseño completo y actas de hardware**
+Mira qué ocupa tu disco en un mapa de burbujas, desinstala apps sin dejar restos, limpia la caché,
+optimiza Windows con un interruptor por ajuste, ve dónde puedes ampliar RAM o SSD y comprueba a
+cuántos Hz va tu pantalla.
 
-[![Descargar](https://img.shields.io/badge/⬇%20Descargar-v2.0-7C3AED?style=for-the-badge)](AppRelease/SystemMonitorDesktop.exe)
-[![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/es-es/download/dotnet/8.0)
+**v2.2**
+
+[![Descargar](https://img.shields.io/badge/⬇%20Descargar-Barep.exe-7C3AED?style=for-the-badge)](https://github.com/Nakly1/SystemMonitorDesktop/releases/latest/download/Barep.exe)
 [![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-0078D4?style=for-the-badge&logo=windows)](#)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](#licencia)
 [![Build](https://img.shields.io/github/actions/workflow/status/Nakly1/SystemMonitorDesktop/build.yml?branch=main&style=for-the-badge&logo=github)](https://github.com/Nakly1/SystemMonitorDesktop/actions/workflows/build.yml)
@@ -18,203 +19,134 @@ hardware** con el número de serie de cada pieza, para saber si te cambiaron alg
 
 ---
 
-## Que es
-
-**System Monitor Desktop** es una app de escritorio hecha en C# + WPF que te muestra el estado
-de tu PC en tiempo real. No necesita instalacion, no se queda en segundo plano, no envia datos
-a ningun sitio — solo lee lo que Windows ya sabe de tu propio hardware y lo presenta de forma
-clara.
-
-Util para diagnosticar lentitud, ver cuanta RAM consume un programa o tener a mano un informe
-de tu equipo.
-
----
-
-## Características
-
-La app se organiza en seis secciones con barra lateral.
-
-### Resumen
-Memoria y procesador con su cifra grande, barra y gráfico de los últimos 2 minutos; gráficos,
-red, energía y la ficha de identidad del equipo (fabricante, modelo, placa base, BIOS).
-
-### Memoria
-- Uso en vivo con historial
-- **Cada módulo físico por separado**: fabricante, **número de parte**, **número de serie**,
-  ranura, banco, capacidad, tipo (DDR3 / DDR4 / DDR5 / LPDDR5), velocidad nominal y real,
-  formato (DIMM / SODIMM) y voltaje
-- Ranuras usadas y libres, para saber si se puede ampliar
-- Si la BIOS sólo publica el código JEDEC del fabricante (`802C`, `80CE`…), se traduce a la
-  marca real (Micron, Samsung, SK hynix…)
-
-### Almacenamiento
-Volúmenes con espacio ocupado, y las **unidades físicas** reales con su número de serie,
-interfaz y firmware.
-
-### Procesos
-Los que más memoria consumen, con peso relativo y botón para finalizarlos.
-
-### Evidencia de hardware
-La razón principal de la v2. Antes de dejar el equipo en un servicio técnico:
-
-1. **Generar acta** — se guardan dos archivos: un `.smev.json` para verificar automáticamente y
-   un `.txt` imprimible con espacio para firmar en la entrega. El acta registra el número de
-   serie de procesador, cada módulo de RAM, tarjetas gráficas, discos, placa base, BIOS y MAC
-   de cada adaptador de red.
-2. Cada acta lleva una **huella SHA-256**. Si alguien edita el archivo después, la huella deja
-   de cuadrar y la app lo avisa.
-3. **Verificar el equipo** — al recogerlo, se carga el acta y la app compara pieza por pieza:
-   marca lo que sigue igual, lo que **cambió** (misma ranura, otro serial), lo que **falta** y
-   lo que **apareció**. El resultado se puede exportar a `.txt`.
-
-Las actas se guardan en `Documentos\System Monitor\Evidencias`.
-
-### Herramientas
-- **Limpiar temporales** — borra archivos de `%TEMP%` y `C:\Windows\Temp` con más de 1 h
-- **Compactar memoria** — recolector de basura de .NET del propio proceso
-- **Exportar informe** — un `.txt` legible con todo el estado del sistema
-
----
-
 ## Descargar y usar
 
-### Opcion A — Descarga directa (recomendado)
-1. Descarga el repositorio como ZIP desde el boton verde **`<> Code`** → **Download ZIP**
-2. Extrae el ZIP donde quieras (Escritorio, por ejemplo)
-3. Entra a la carpeta **`AppRelease/`**
-4. Doble clic en **`SystemMonitorDesktop.exe`**
+1. Descarga **[Barep.exe](https://github.com/Nakly1/SystemMonitorDesktop/releases/latest/download/Barep.exe)**
+   (o entra en [Releases](https://github.com/Nakly1/SystemMonitorDesktop/releases)).
+2. Doble clic. Ya está.
 
-No necesita instalacion, no modifica el registro, no crea accesos directos.
+No hay instalador y **no necesitas instalar .NET**: todo va dentro del ejecutable.
+La primera vez Windows puede mostrar «Windows protegió tu PC» porque el `.exe` no está firmado:
+pulsa **Más información → Ejecutar de todas formas**.
 
-> **Requisito unico:** [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/es-es/download/dotnet/8.0/runtime?cid=getdotnetcore&os=windows&arch=x64) (gratis, ~55 MB).
-> Si al abrir la app te sale un mensaje de "no se encuentra .NET", instala el runtime y vuelve a probar.
+---
 
-### Opcion B — Compilar desde el codigo fuente
+## Qué hace
+
+### Resumen
+Memoria y procesador en vivo con gráfico de los últimos 2 minutos, gráficas, red, batería y la
+ficha del equipo (fabricante, modelo, placa base, BIOS).
+
+### Memoria
+Cada módulo de RAM por separado: fabricante, número de parte y de serie, ranura, tipo
+(DDR4, DDR5, LPDDR5…), velocidad nominal y real, y ranuras libres para ampliar.
+
+### Almacenamiento
+Volúmenes con su espacio y las unidades físicas con número de serie, interfaz y firmware.
+
+### Lupa
+El disco dibujado como **burbujas proporcionales a lo que ocupa cada carpeta**, con la lista
+ordenada por tamaño al lado.
+- Analiza una unidad, una carpeta o **solo las aplicaciones instaladas**, con su icono real.
+- Entra en una app para ver su ficha y **desinstalarla por completo**: abre el desinstalador
+  oficial y después busca los restos (AppData, ProgramData, accesos directos) para borrarlos.
+- **Visor de fotos y vídeos**, con abrir, «abrir con…» y mostrar en el Explorador.
+- **Limpiar caché**: temporales, caché de navegadores, Discord, Spotify, informes de errores,
+  miniaturas, sombreadores y papelera. Te enseña qué va a borrar, marcas lo que quieras y ves
+  una barra de progreso.
+- **Revisar y eliminar** manda lo seleccionado a la papelera. Windows y las carpetas del sistema
+  están protegidas.
+- El análisis se guarda: al volver se abre al instante.
+
+### Optimizar
+Ajustes de Windows con su interruptor, en qué consiste cada uno en palabras sencillas y
+**qué conviene saber antes** (qué cambia, cómo se verá, qué deja de funcionar).
+- **Privacidad**: datos de diagnóstico, ID de publicidad, Bing en Inicio, historial de actividad…
+- **Anuncios y sugerencias**: pantalla de bloqueo, apps que se instalan solas, consejos.
+- **Barra de tareas**: widgets, «Finalizar tarea» con clic derecho.
+- **Juegos**: Xbox Game Bar, modo de juego, aceleración del ratón, programación de GPU.
+- **Rendimiento**: plan de energía, transparencias, animaciones, sensor de almacenamiento.
+- **Explorador**: extensiones de archivo, menú de clic derecho clásico.
+
+Si Windows no deja cambiar algo desde otra app, Barep abre directamente su página de
+Configuración. Los que necesitan permisos piden abrir la app como administrador. Todo se
+deshace con el mismo interruptor. No toca Defender, Windows Update ni servicios del sistema.
+
+### Mi PC
+Un **plano 2D de tu portátil o sobremesa** con el procesador, la gráfica, cada módulo de RAM,
+los discos y la batería. Las **ranuras libres** (RAM o M.2) salen en verde para que sepas dónde
+ampliar. Al pasar el ratón por cada pieza ves sus datos.
+
+### Pantalla
+Hz actuales y máximos, resolución nativa, pulgadas, escala, HDR, bits de color y fabricante del
+panel. Si tu pantalla admite más Hz de los que usa, te lo dice y los sube con un clic; si la
+imagen falla, vuelve sola a los anteriores en 15 segundos.
+
+### Evidencia de hardware
+Antes de llevar el equipo al servicio técnico, genera un **acta** con el número de serie de cada
+pieza (procesador, RAM, gráficas, discos, placa, BIOS, MAC) firmada con SHA-256. Al recogerlo,
+la app compara pieza por pieza y te dice qué cambió, qué falta y qué apareció.
+
+### Temas
+Oscuro (negro) o claro (blanco), con acento morado. Se cambia desde la barra lateral.
+
+---
+
+## Compilar desde el código
+
 Necesitas el [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0):
 
 ```bash
 git clone https://github.com/Nakly1/SystemMonitorDesktop.git
 cd SystemMonitorDesktop
-dotnet publish -c Release -r win-x64 --self-contained false -o AppRelease
+dotnet run                                        # abrir en modo desarrollo
+dotnet publish -c Release -r win-x64 -o publish   # genera publish/Barep.exe (un solo archivo)
 ```
 
-El ejecutable queda en `AppRelease/SystemMonitorDesktop.exe`.
-
----
-
-## Diseño
-
-Sistema visual propio, en negro, morado profundo y blanco cálido:
-
-- Superficies en negro con matiz violeta (`#0A0810` … `#1A1526`) en lugar de negro puro, que
-  produce halación y cansa la vista en pantallas OLED
-- Un único acento saturado (violeta `#8B5CF6`) sobre una base desaturada
-- Tipografía **Segoe UI Variable Display / Text**, el equivalente más cercano a SF Pro en
-  Windows: titulares en *Display*, cuerpo en *Text*, cifras tabulares en toda métrica en vivo
-  para que los dígitos no bailen entre refrescos
-- Sentence case en todos los títulos, tres pesos como máximo, iconografía dibujada sobre una
-  retícula propia de 24 px
-- Chrome de ventana personalizado con esquinas redondeadas nativas de Windows 11
+Cada etiqueta `vX.Y.Z` que se sube a GitHub publica automáticamente `Barep.exe` en Releases.
 
 ---
 
 ## Cómo funciona por dentro
 
-- **WPF** sobre .NET 8 (XAML + code-behind, sin MVVM pesado)
-- **WMI** (`System.Management`) para CPU, RAM por módulo, GPU, discos, placa base, BIOS y SO
-- **Registro de Windows** para detectar VRAM correctamente en GPUs de más de 4 GB
-- **PerformanceCounter** para el uso de CPU
-- **NetworkInterface** para contadores de red y direcciones MAC
-- **P/Invoke `GetSystemPowerStatus`** para la batería
-- **`System.Text.Json` + SHA-256** para las actas de hardware
-- Un solo `MonitorService` con un `DispatcherTimer` a 2 s: muestrea fuera del hilo de interfaz
-  y reparte la lectura por evento a las vistas abiertas
-
----
-
-## Estructura del proyecto
-
-```
-SystemMonitorDesktop/
-├── App.xaml                       ← combina los diccionarios de tema
-├── MainWindow.xaml(.cs)           ← shell: chrome, barra lateral, navegación
-├── Theme/
-│   ├── Palette.xaml               ← colores y degradados
-│   ├── Typography.xaml            ← escala tipográfica
-│   └── Controls.xaml              ← tarjetas, botones, medidores, iconos
-├── Views/
-│   ├── OverviewView               ← Resumen
-│   ├── MemoryView                 ← Memoria y módulos físicos
-│   ├── StorageView                ← Volúmenes y unidades
-│   ├── ProcessesView              ← Procesos
-│   ├── EvidenceView               ← Actas de hardware
-│   └── ToolsView                  ← Mantenimiento
-├── Controls/
-│   ├── Sparkline.cs               ← gráfico compacto por OnRender
-│   └── UiKit.cs                   ← fichas técnicas construidas en código
-├── Services/
-│   ├── HardwareModels.cs          ← registros de datos
-│   ├── HardwareService.cs         ← todas las consultas WMI
-│   ├── JedecVendors.cs            ← códigos JEDEC → marca de RAM
-│   ├── EvidenceService.cs         ← capturar, firmar y comparar actas
-│   ├── SystemReport.cs            ← informe legible del sistema
-│   ├── MonitorService.cs          ← muestreo periódico
-│   └── AppServices.cs             ← servicios compartidos
-└── AppRelease/                    ← build publicado listo para usar
-    └── SystemMonitorDesktop.exe
-```
-
----
-
-## Roadmap
-
-- [ ] Uso de CPU por núcleo individual
-- [ ] Temperaturas de CPU / GPU (vía LibreHardwareMonitor)
-- [ ] Gráfico histórico también para red
-- [ ] Bandeja de sistema (minimizar al tray)
-- [ ] Tema claro / modo auto
-- [ ] Alertas configurables (ej. avisar si RAM > 90 % durante 30 s)
-- [ ] Firma digital del acta con certificado del usuario
-- [ ] Localización a inglés
-
-Los PRs con mejoras son bienvenidos.
+- **WPF** sobre .NET 8, publicado como ejecutable único autocontenido
+- **WMI** (`System.Management`) para CPU, RAM, GPU, discos, ranuras, placa y monitores (EDID)
+- **API de configuración de pantalla** de Windows para Hz exactos, HDR y tipo de conexión
+- **Registro de Windows** para los ajustes de Optimizar y el inventario de aplicaciones
+- **Enumeración nativa de archivos** en paralelo para la Lupa, con caché comprimida en disco
+- **Shell de Windows** para iconos reales, papelera de reciclaje y «abrir con»
 
 ---
 
 ## Preguntas frecuentes
 
 **¿Necesita permisos de administrador?**
-No para el uso normal. Sólo al limpiar `C:\Windows\Temp` algunos archivos bloqueados no se podrán
-borrar sin ejecutarla como admin — pero la app funciona igual.
+No para el uso normal. Algunos ajustes de Optimizar sí (la app lo indica y ofrece reabrirse como
+administrador), y desinstalar programas puede pedir el permiso de Windows.
 
-**¿El acta de hardware sirve como prueba legal?**
-No es un documento con validez jurídica por sí solo. Es una constancia técnica fechada y firmada
-con SHA-256 de lo que había en el equipo en ese momento: sirve para reclamar con datos concretos
-(«este módulo tenía el serial X») y para detectar el cambiazo. Imprime el `.txt`, fírmalo con
-quien recibe el equipo y guarda el `.smev.json` para la verificación automática.
+**¿Envía datos a internet?**
+No. Lee solo tu propio equipo. Únicamente abre el navegador si tú pulsas un botón de «Buscar»
+(por ejemplo, el manual de tu portátil o el tipo de panel de tu pantalla).
 
-**¿Qué pasa si una pieza no tiene número de serie?**
-Algunas BIOS no lo publican. En ese caso la app lo dice explícitamente y compara esa pieza por
-ranura y modelo, que es menos concluyente pero sigue detectando sustituciones.
+**¿Borra algo sin preguntar?**
+No. Todo lo que se borra se enseña antes en una lista para marcar o desmarcar. Lo de la Lupa va a
+la papelera de reciclaje; la caché se borra del todo porque los programas la regeneran.
+
+**¿El plano de Mi PC es exacto?**
+Las piezas y las ranuras libres son las reales de tu equipo; su posición en el dibujo es la típica
+de un portátil o una placa de sobremesa, porque Windows no informa de dónde está cada una.
 
 **¿Funciona en Linux / macOS?**
-No. Usa WMI y el registro de Windows, asi que es solo para Windows 10 / 11.
-
-**¿Envia datos a internet?**
-No. La app lee solo de tu propia maquina y no hace ninguna conexion saliente.
-
-
+No. Usa WMI y el registro de Windows, así que es solo para Windows 10 / 11.
 
 ---
 
 ## Licencia
 
-**MIT** — haz con este codigo lo que quieras, solo no me culpes si algo sale mal :)
-
----
+**MIT** — haz con este código lo que quieras.
 
 <div align="center">
 
-Si te es util, deja una ⭐ en el repo. Reportes de bugs o sugerencias en **Issues**.
+Si te es útil, deja una ⭐ en el repo. Reportes de bugs o sugerencias en **Issues**.
 
 </div>

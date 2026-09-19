@@ -12,25 +12,12 @@
 
             <Border Style="{StaticResource Card}" Margin="0,0,0,14">
                 <StackPanel>
-                    <TextBlock Text="Liberar espacio" Style="{StaticResource T.Headline}"
-                               Margin="0,0,0,4"/>
-                    <TextBlock Style="{StaticResource T.Secondary}" Margin="0,0,0,18" MaxWidth="640"
-                               HorizontalAlignment="Left"
-                               Text="Borra los archivos temporales de tu usuario y de Windows que llevan más de una hora sin tocarse. Los archivos en uso se dejan intactos."/>
-                    <Button x:Name="CleanButton" Content="Limpiar archivos temporales"
-                            Style="{StaticResource Btn}" HorizontalAlignment="Left"
-                            Click="CleanButton_Click"/>
-                </StackPanel>
-            </Border>
-
-            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
-                <StackPanel>
                     <TextBlock Text="Liberar memoria de la aplicación" Style="{StaticResource T.Headline}"
                                Margin="0,0,0,4"/>
                     <TextBlock Style="{StaticResource T.Secondary}" Margin="0,0,0,18" MaxWidth="640"
                                HorizontalAlignment="Left"
-                               Text="Fuerza al recolector de basura de .NET a devolver al sistema la memoria que ya no usa System Monitor. No afecta a otros programas."/>
-                    <Button x:Name="GcButton" Content="Compactar memoria de System Monitor"
+                               Text="Fuerza al recolector de basura de .NET a devolver al sistema la memoria que ya no usa Barep. No afecta a otros programas."/>
+                    <Button x:Name="GcButton" Content="Compactar memoria de Barep"
                             Style="{StaticResource Btn}" HorizontalAlignment="Left"
                             Click="GcButton_Click"/>
                 </StackPanel>

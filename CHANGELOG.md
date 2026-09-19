@@ -7,6 +7,54 @@ el versionado sigue [SemVer](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-09-19
+
+### Added
+- **Mi PC**: plano 2D del equipo (portatil o sobremesa) con sus piezas reales;
+  las ranuras de RAM y M.2 libres se marcan en verde.
+- **Pantalla**: Hz actuales y maximos, resolucion nativa, tamano, escala, HDR,
+  bits de color y fabricante del panel; cambio de Hz con vuelta atras en 15 s.
+- Tema claro (blanco con morado) y tema oscuro en negro puro, con boton en la
+  barra lateral.
+- `dotnet run -- --probar-ajustes`: prueba de ida y vuelta de todos los ajustes
+  de Optimizar, con informe en `prueba-ajustes.txt`.
+
+### Changed
+- La app pasa a llamarse **Barep** y se publica como un solo `Barep.exe`
+  autocontenido: ya no hace falta instalar .NET para usarla.
+- Tema oscuro en negro y grises neutros; barras de progreso rectangulares e
+  iconos de la barra lateral con borde.
+- Optimizar con diseno de lista agrupada (sin ovalos) y filtro segmentado.
+- Los ajustes leen todos sus valores: uno aplicado a medias ya no aparece como
+  optimizado. Se ocultan los que no hacen nada en tu version de Windows.
+
+## [2.1.0] - 2026-09-19
+
+### Added
+- **Lupa**: mapa de burbujas del disco al estilo de CleanMyMac. Cada carpeta es
+  una esfera cuyo tamano es proporcional a lo que ocupa; a la izquierda, la
+  lista completa ordenada por peso. Se entra en cualquier carpeta pulsando su
+  burbuja o su fila, con atras/adelante y migas de pan.
+- Analisis de unidades completas, de una carpeta concreta o solo de las
+  aplicaciones instaladas. Incluye archivos ocultos y de sistema; no cuenta dos
+  veces las uniones de Windows ni los archivos de OneDrive que solo estan en la nube.
+- Iconos reales de cada aplicacion y archivo, y ficha de la aplicacion al
+  entrar en su carpeta (editor, version, fecha de instalacion, tamano, ubicacion).
+- **Desinstalar por completo**: lanza el desinstalador oficial y despues busca
+  los restos (AppData, ProgramData, carpeta de instalacion, accesos directos)
+  para borrarlos tambien.
+- **Limpiar caché** dentro de la Lupa (sustituye a «Limpiar temporales» de
+  Herramientas): temporales, cachés de navegadores y programas, informes de
+  errores, miniaturas, sombreadores y papelera, con casillas para elegir.
+- Los analisis se guardan y se reabren al instante; visor de fotos y videos.
+- **Optimizar**: 34 ajustes de Windows con interruptor, explicacion sencilla y aviso
+  de lo que cambia; abre Configuracion si Windows bloquea el cambio y permite
+  reabrir la app como administrador.
+- Barra de progreso al limpiar la cache.
+- **Revisar y eliminar**: seleccion de carpetas y archivos que se mueven a la
+  papelera de reciclaje. Windows, las carpetas de sistema y las raices del
+  usuario estan protegidas y no se pueden seleccionar.
+
 ## [2.0.0] - 2026-08-09
 
 ### Added

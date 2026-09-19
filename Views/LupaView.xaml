@@ -1,0 +1,600 @@
+<UserControl x:Class="SystemMonitorDesktop.Views.LupaView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:SystemMonitorDesktop.Controls"
+             Background="Transparent" Focusable="True" FocusVisualStyle="{x:Null}"
+             PreviewKeyDown="View_PreviewKeyDown">
+
+    <UserControl.Resources>
+
+        <!--
+            Ilustración de la Lupa: una losa de cristal morado con un aro y un
+            botón, dibujada con formas para que escale sin perder nitidez.
+        -->
+        <ControlTemplate x:Key="LensArt" TargetType="ContentControl">
+            <Grid Width="210" Height="210">
+                <Ellipse Width="300" Height="300" Margin="-45" IsHitTestVisible="False">
+                    <Ellipse.Fill>
+                        <RadialGradientBrush>
+                            <GradientStop Color="#558B5CF6" Offset="0"/>
+                            <GradientStop Color="#228B5CF6" Offset="0.45"/>
+                            <GradientStop Color="#008B5CF6" Offset="1"/>
+                        </RadialGradientBrush>
+                    </Ellipse.Fill>
+                </Ellipse>
+                <Border CornerRadius="58" BorderThickness="1.5">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#FF5A45A6" Offset="0"/>
+                            <GradientStop Color="#FF33256B" Offset="0.5"/>
+                            <GradientStop Color="#FF1D1540" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <Border.BorderBrush>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#CCE9DEFF" Offset="0"/>
+                            <GradientStop Color="#338B5CF6" Offset="0.6"/>
+                            <GradientStop Color="#99A78BFA" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.BorderBrush>
+                    <Border.Effect>
+                        <DropShadowEffect Color="#8B5CF6" BlurRadius="60" ShadowDepth="0" Opacity="0.55"/>
+                    </Border.Effect>
+                </Border>
+                <Border CornerRadius="58" Margin="2" IsHitTestVisible="False">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                            <GradientStop Color="#2EFFFFFF" Offset="0"/>
+                            <GradientStop Color="#00FFFFFF" Offset="0.5"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                </Border>
+                <Ellipse Width="106" Height="106" StrokeThickness="27" Margin="-16,-16,0,0"
+                         HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Ellipse.Stroke>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#FFFFFFFF" Offset="0"/>
+                            <GradientStop Color="#FFE4DBFA" Offset="0.35"/>
+                            <GradientStop Color="#FFB9A2FB" Offset="0.75"/>
+                            <GradientStop Color="#FF8B5CF6" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Ellipse.Stroke>
+                    <Ellipse.Effect>
+                        <DropShadowEffect Color="#2E1065" BlurRadius="20" ShadowDepth="5" Opacity="0.55"/>
+                    </Ellipse.Effect>
+                </Ellipse>
+                <Ellipse Width="34" Height="34" Margin="118,118,0,0"
+                         HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Ellipse.Fill>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#FFFFFFFF" Offset="0"/>
+                            <GradientStop Color="#FFC4B5FD" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Ellipse.Fill>
+                    <Ellipse.Effect>
+                        <DropShadowEffect Color="#2E1065" BlurRadius="14" ShadowDepth="3" Opacity="0.5"/>
+                    </Ellipse.Effect>
+                </Ellipse>
+            </Grid>
+        </ControlTemplate>
+
+        <!-- Fila de la lista de la izquierda -->
+        <DataTemplate x:Key="RowTemplate">
+            <Grid Background="Transparent" Cursor="Hand"
+                  MouseLeftButtonUp="Row_Click" MouseRightButtonUp="Row_RightClick"
+                  MouseEnter="Row_Enter" MouseLeave="Row_Leave">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="26"/>
+                    <ColumnDefinition Width="40"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <CheckBox Style="{StaticResource Check}" HorizontalAlignment="Left"
+                          IsChecked="{Binding IsChecked, Mode=TwoWay}"
+                          Visibility="{Binding CheckVisibility}"/>
+                <Path Data="{StaticResource Glyph.Lock}" Fill="{StaticResource Br.TextTertiary}"
+                      Width="12" Height="12" Stretch="Uniform" HorizontalAlignment="Left"
+                      Margin="2,0,0,0" VerticalAlignment="Center"
+                      Visibility="{Binding LockVisibility}" ToolTip="{Binding ProtectedReason}"/>
+
+                <Grid Grid.Column="1" Width="30" Height="30" HorizontalAlignment="Left">
+                    <Image Source="{Binding Icon}" Visibility="{Binding ImageVisibility}"
+                           RenderOptions.BitmapScalingMode="HighQuality"/>
+                    <Path Data="{Binding Glyph}" Fill="{Binding GlyphBrush}" Stretch="Uniform"
+                          Margin="2" Visibility="{Binding GlyphVisibility}"/>
+                </Grid>
+
+                <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="0,0,10,0">
+                    <TextBlock Text="{Binding Name}" Style="{StaticResource T.Value}" FontSize="13"
+                               ToolTip="{Binding FullPath}"/>
+                    <TextBlock Text="{Binding SubText}" Style="{StaticResource T.Caption}"
+                               TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                    <Grid Height="3" Margin="0,6,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{Binding ShareWidth}"/>
+                            <ColumnDefinition Width="{Binding RestWidth}"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.ColumnSpan="2" Background="{StaticResource Br.Track}" CornerRadius="2"/>
+                        <Border Background="{StaticResource Br.AccentGradient}" CornerRadius="2"/>
+                    </Grid>
+                </StackPanel>
+
+                <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button x:Name="RowUninstall" Content="Desinstalar" Style="{StaticResource BtnDanger}"
+                            Visibility="Collapsed" Margin="0,0,10,0" Click="RowUninstall_Click"/>
+                    <TextBlock Text="{Binding SizeText}" Style="{StaticResource T.Value}"
+                               Foreground="{StaticResource Br.TextSecondary}" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+            <DataTemplate.Triggers>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True"/>
+                        <Condition Binding="{Binding CanUninstall}" Value="True"/>
+                    </MultiDataTrigger.Conditions>
+                    <Setter TargetName="RowUninstall" Property="Visibility" Value="Visible"/>
+                </MultiDataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- Fila de los diálogos (revisar, restos) -->
+        <DataTemplate x:Key="DialogRowTemplate">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="26"/>
+                    <ColumnDefinition Width="34"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <CheckBox Style="{StaticResource Check}" HorizontalAlignment="Left"
+                          IsChecked="{Binding IsChecked, Mode=TwoWay}"/>
+                <Grid Grid.Column="1" Width="24" Height="24" HorizontalAlignment="Left">
+                    <Image Source="{Binding Icon}" Visibility="{Binding ImageVisibility}"
+                           RenderOptions.BitmapScalingMode="HighQuality"/>
+                    <Path Data="{Binding Glyph}" Fill="{Binding GlyphBrush}" Stretch="Uniform"
+                          Margin="1" Visibility="{Binding GlyphVisibility}"/>
+                </Grid>
+                <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="0,0,10,0">
+                    <TextBlock Text="{Binding Title}" Style="{StaticResource T.Value}"/>
+                    <TextBlock Text="{Binding Detail}" FontFamily="{Binding DetailFont}" FontSize="{Binding DetailSize}"
+                               Foreground="{StaticResource Br.TextTertiary}" TextWrapping="{Binding DetailWrap}"
+                               TextTrimming="CharacterEllipsis" ToolTip="{Binding Detail}" Margin="0,2,0,0"/>
+                </StackPanel>
+                <TextBlock Grid.Column="3" Text="{Binding SizeText}" Style="{StaticResource T.Value}"
+                           Foreground="{StaticResource Br.TextSecondary}" VerticalAlignment="Center"/>
+            </Grid>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Grid>
+
+        <!-- ══════════════ 1 · Inicio ══════════════ -->
+        <ScrollViewer x:Name="StartPanel" VerticalScrollBarVisibility="Auto">
+            <Grid Margin="40,30,40,30" MaxWidth="980" VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="400"/>
+                </Grid.ColumnDefinitions>
+
+                <ContentControl Template="{StaticResource LensArt}" HorizontalAlignment="Center"
+                                VerticalAlignment="Center" Margin="0,0,30,0"/>
+
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="Lupa" FontFamily="{StaticResource Font.Display}" FontSize="40"
+                               FontWeight="SemiBold" Foreground="{StaticResource Br.TextPrimary}"/>
+                    <TextBlock Text="Visualiza qué ocupa más espacio en el disco y haz limpieza rápidamente."
+                               Style="{StaticResource T.Secondary}" FontSize="14" Margin="0,6,0,20"/>
+
+                    <StackPanel Margin="0,0,0,22">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,11">
+                            <Border Width="28" Height="28" CornerRadius="8" Background="{StaticResource Br.AccentTintStrong}" Margin="0,0,12,0">
+                                <Path Data="{StaticResource Glyph.Map}" Fill="{StaticResource Br.AccentBright}" Width="14" Height="14" Stretch="Uniform"/>
+                            </Border>
+                            <TextBlock Text="Mapa visual del almacenamiento" Style="{StaticResource T.Value}" FontSize="13" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,11">
+                            <Border Width="28" Height="28" CornerRadius="8" Background="{StaticResource Br.AccentTintStrong}" Margin="0,0,12,0">
+                                <Path Data="{StaticResource Glyph.Eye}" Fill="{StaticResource Br.AccentBright}" Width="15" Height="15" Stretch="Uniform"/>
+                            </Border>
+                            <TextBlock Text="Archivos ocultos descubiertos" Style="{StaticResource T.Value}" FontSize="13" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="28" Height="28" CornerRadius="8" Background="{StaticResource Br.AccentTintStrong}" Margin="0,0,12,0">
+                                <Path Data="{StaticResource Glyph.Stack}" Fill="{StaticResource Br.AccentBright}" Width="13" Height="13" Stretch="Uniform"/>
+                            </Border>
+                            <TextBlock Text="Aplicaciones con su icono, tamaño y desinstalación completa" Style="{StaticResource T.Value}"
+                                       FontSize="13" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="340"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <TextBlock Text="Qué quieres analizar" Style="{StaticResource T.Label}" Margin="0,0,0,9"/>
+                    <StackPanel x:Name="SourcesPanel"/>
+
+                    <WrapPanel Margin="0,8,0,0">
+                        <Button x:Name="OpenCachedButton" Content="Ver último análisis" Style="{StaticResource BtnPrimary}"
+                                Padding="22,10" Margin="0,0,10,8" Click="OpenCached_Click" Visibility="Collapsed"/>
+                        <Button x:Name="AnalyzeButton" Content="Analizar" Style="{StaticResource BtnPrimary}"
+                                Padding="26,10" Margin="0,0,10,8" Click="Analyze_Click"/>
+                        <Button Content="Elegir carpeta…" Style="{StaticResource BtnGhost}" Margin="0,0,10,8"
+                                Click="ChooseFolder_Click"/>
+                        <Button Style="{StaticResource BtnGhost}" Margin="0,0,0,8" Click="CleanCache_Click"
+                                ToolTip="Revisa y borra cachés y temporales que se pueden regenerar">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="{StaticResource Glyph.Broom}" Stroke="{StaticResource Br.AccentBright}"
+                                      StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                      StrokeLineJoin="Round" Width="13" Height="13" Stretch="Uniform" Margin="0,0,7,0"/>
+                                <TextBlock Text="Limpiar caché"/>
+                            </StackPanel>
+                        </Button>
+                    </WrapPanel>
+                    <TextBlock x:Name="CachedText" Style="{StaticResource T.Caption}" Margin="0,2,0,0"
+                               Visibility="Collapsed" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="StartStatus" Style="{StaticResource T.Secondary}"
+                               Foreground="{StaticResource Br.Critical}" Margin="0,12,0,0" Visibility="Collapsed"/>
+                </StackPanel>
+            </Grid>
+        </ScrollViewer>
+
+        <!-- ══════════════ 2 · Analizando ══════════════ -->
+        <Grid x:Name="ScanPanel" Visibility="Collapsed">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="30">
+                <Grid Width="290" Height="290" HorizontalAlignment="Center">
+                    <ContentControl Template="{StaticResource LensArt}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <Ellipse x:Name="OrbitRing" Width="276" Height="276" StrokeThickness="2.5"
+                             StrokeDashArray="18 10" StrokeDashCap="Round" RenderTransformOrigin="0.5,0.5">
+                        <Ellipse.Stroke>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#FFE4DBFA" Offset="0"/>
+                                <GradientStop Color="#00A78BFA" Offset="0.55"/>
+                                <GradientStop Color="#FF8B5CF6" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Ellipse.Stroke>
+                        <Ellipse.RenderTransform>
+                            <RotateTransform x:Name="OrbitRotation"/>
+                        </Ellipse.RenderTransform>
+                    </Ellipse>
+                </Grid>
+                <TextBlock x:Name="ScanTitle" Text="Visualizando tu espacio de almacenamiento…"
+                           FontFamily="{StaticResource Font.Display}" FontSize="21" FontWeight="SemiBold"
+                           Foreground="{StaticResource Br.TextPrimary}" HorizontalAlignment="Center" Margin="0,24,0,8"/>
+                <TextBlock x:Name="ScanPathText" Style="{StaticResource T.Mono}" HorizontalAlignment="Center"
+                           TextTrimming="CharacterEllipsis" MaxWidth="600" Text=" "/>
+                <TextBlock x:Name="ScanCountText" Style="{StaticResource T.Caption}" HorizontalAlignment="Center"
+                           Margin="0,8,0,20" Text=" "/>
+                <Button Content="Detener" Style="{StaticResource BtnGhost}" HorizontalAlignment="Center"
+                        Click="Stop_Click"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- ══════════════ 3 · Mapa ══════════════ -->
+        <Grid x:Name="BrowsePanel" Visibility="Collapsed" Margin="22,12,22,16" MouseDown="Browse_MouseDown">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Barra: volver a empezar · atrás/adelante · migas -->
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Button Style="{StaticResource BtnLink}" Click="Restart_Click" VerticalAlignment="Center"
+                        ToolTip="Volver a la pantalla de inicio de la Lupa">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="{StaticResource Glyph.Restart}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                              StrokeThickness="2.2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                              Width="13" Height="13" Stretch="Uniform" Margin="0,0,7,0"/>
+                        <TextBlock Text="Volver a empezar"/>
+                    </StackPanel>
+                </Button>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="10,0,12,0">
+                    <Button x:Name="BackButton" Style="{StaticResource BtnIcon}" Click="Back_Click" ToolTip="Atrás">
+                        <Path Data="{StaticResource Glyph.Back}" Stroke="{StaticResource Br.TextPrimary}" StrokeThickness="2.4"
+                              StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                              Width="10" Height="10" Stretch="Uniform"/>
+                    </Button>
+                    <Button x:Name="ForwardButton" Style="{StaticResource BtnIcon}" Click="Forward_Click"
+                            ToolTip="Adelante" Margin="6,0,0,0">
+                        <Path Data="{StaticResource Glyph.Forward}" Stroke="{StaticResource Br.TextPrimary}" StrokeThickness="2.4"
+                              StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                              Width="10" Height="10" Stretch="Uniform"/>
+                    </Button>
+                </StackPanel>
+
+                <Border Grid.Column="2" Background="{StaticResource Br.Surface}" BorderBrush="{StaticResource Br.Stroke}"
+                        BorderThickness="1" CornerRadius="9" Padding="8,3" MinHeight="32">
+                    <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                  x:Name="BreadcrumbScroller">
+                        <StackPanel x:Name="BreadcrumbPanel" Orientation="Horizontal" VerticalAlignment="Center"/>
+                    </ScrollViewer>
+                </Border>
+
+                <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,0,0">
+                    <Button Style="{StaticResource BtnPrimary}" Padding="13,7" Margin="0,0,10,0"
+                            Click="CleanCache_Click" ToolTip="Revisa y borra cachés y temporales que se pueden regenerar">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{StaticResource Glyph.Broom}" Stroke="White" StrokeThickness="2"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                  Width="13" Height="13" Stretch="Uniform" Margin="0,0,7,0"/>
+                            <TextBlock Text="Limpiar caché"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Content="Actualizar" Style="{StaticResource BtnLink}" Click="Refresh_Click"
+                            ToolTip="Volver a analizar para ver los cambios"/>
+                    <Button Content="Mostrar en el Explorador" Style="{StaticResource BtnLink}"
+                            Click="Reveal_Click" x:Name="RevealButton"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- Lista a la izquierda, burbujas a la derecha -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="380"/>
+                    <ColumnDefinition Width="14"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Style="{StaticResource Card}" Padding="0">
+                    <DockPanel>
+                        <!-- Cabecera de la carpeta actual -->
+                        <Grid DockPanel.Dock="Top" Margin="16,16,16,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Width="46" Height="46" CornerRadius="12" Background="{StaticResource Br.AccentTint}"
+                                    Margin="0,0,13,0">
+                                <Grid>
+                                    <Image x:Name="HeaderImage" Width="34" Height="34" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                    <Path x:Name="HeaderGlyph" Width="26" Height="26" Stretch="Uniform"
+                                          Fill="{StaticResource Br.GlyphFolder}"/>
+                                </Grid>
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock x:Name="HeaderName" Style="{StaticResource T.Headline}" FontSize="15"
+                                           TextTrimming="CharacterEllipsis"/>
+                                <TextBlock x:Name="HeaderMeta" Style="{StaticResource T.Caption}" Margin="0,3,0,0"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Ficha de la aplicación (sólo si la carpeta es un programa) -->
+                        <Border x:Name="AppCard" DockPanel.Dock="Top" Style="{StaticResource Well}"
+                                Margin="14,0,14,12" Padding="14,12" Visibility="Collapsed">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                    <Border Style="{StaticResource Chip}">
+                                        <TextBlock x:Name="AppKindText" Text="Aplicación instalada" Style="{StaticResource ChipText}"/>
+                                    </Border>
+                                </StackPanel>
+                                <StackPanel x:Name="AppSpecs"/>
+                                <WrapPanel Margin="0,6,0,0">
+                                    <Button x:Name="UninstallButton" Style="{StaticResource BtnDestructive}" Padding="14,7"
+                                            Margin="0,0,8,0" Click="Uninstall_Click">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Path Data="{StaticResource Glyph.Trash}" Stroke="White" StrokeThickness="2"
+                                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                                  Width="12" Height="12" Stretch="Uniform" Margin="0,0,7,0"/>
+                                            <TextBlock x:Name="UninstallText" Text="Desinstalar por completo"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button x:Name="AppFolderButton" Content="Abrir ubicación" Style="{StaticResource BtnGhost}"
+                                            Padding="12,7" Click="AppFolder_Click"/>
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Seleccionar todo / ninguno -->
+                        <Grid DockPanel.Dock="Top" Margin="16,0,14,4">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="Seleccionar:" Style="{StaticResource T.Caption}" VerticalAlignment="Center"/>
+                                <Button x:Name="SelectAllButton" Content="Todo" Style="{StaticResource BtnLink}"
+                                        Margin="4,0,0,0" Click="SelectAll_Click"/>
+                                <Button Content="Ninguno" Style="{StaticResource BtnLink}" Click="SelectNone_Click"/>
+                            </StackPanel>
+                            <TextBlock x:Name="ListCountText" Style="{StaticResource T.Caption}"
+                                       HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                        </Grid>
+                        <Border DockPanel.Dock="Top" Style="{StaticResource Divider}" Margin="14,4,14,4"/>
+
+                        <Grid>
+                            <ListBox x:Name="ItemsList" Style="{StaticResource FlatList}"
+                                     ItemTemplate="{StaticResource RowTemplate}" Margin="6,0,4,8"/>
+                            <TextBlock x:Name="EmptyListText" Style="{StaticResource T.Secondary}"
+                                       Foreground="{StaticResource Br.TextTertiary}" TextAlignment="Center"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" Margin="24"
+                                       Visibility="Collapsed"/>
+                        </Grid>
+                    </DockPanel>
+                </Border>
+
+                <Border Grid.Column="2" CornerRadius="14" Background="{StaticResource Br.LensStage}"
+                        BorderBrush="{StaticResource Br.StrokeStrong}" BorderThickness="1" ClipToBounds="True">
+                    <Grid>
+                        <c:BubbleMap x:Name="Map" Margin="16"/>
+                        <TextBlock x:Name="MapEmptyText" Style="{StaticResource T.Secondary}"
+                                   Foreground="{StaticResource Br.TextTertiary}" HorizontalAlignment="Center"
+                                   VerticalAlignment="Center" Visibility="Collapsed"/>
+                        <TextBlock Text="Clic: entrar o ver · Clic derecho: más opciones" Style="{StaticResource T.Caption}"
+                                   HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,12,16,0"
+                                   Opacity="0.8" IsHitTestVisible="False"/>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- Pie: disco · selección · revisar y eliminar -->
+            <Grid Grid.Row="2" Margin="2,14,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="360"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <Grid>
+                        <TextBlock x:Name="VolumeName" Style="{StaticResource T.Value}"/>
+                        <TextBlock x:Name="VolumeText" Style="{StaticResource T.Caption}" HorizontalAlignment="Right"/>
+                    </Grid>
+                    <ProgressBar x:Name="VolumeMeter" Style="{StaticResource Meter}" Maximum="100" Margin="0,7,0,0"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center"
+                            Margin="0,0,16,0">
+                    <TextBlock x:Name="FooterMessage" Style="{StaticResource T.Caption}" Foreground="{StaticResource Br.Positive}"
+                               VerticalAlignment="Center" Margin="0,0,16,0"/>
+                    <TextBlock x:Name="SelectionText" Text="0 elementos seleccionados" Style="{StaticResource T.Caption}"
+                               VerticalAlignment="Center"/>
+                    <Border Width="1" Height="12" Background="{StaticResource Br.Stroke}" Margin="10,0"/>
+                    <TextBlock x:Name="SelectionSize" Text="0 KB" Style="{StaticResource T.Value}" VerticalAlignment="Center"/>
+                </StackPanel>
+                <Button Grid.Column="2" x:Name="ReviewButton" Content="Revisar y eliminar"
+                        Style="{StaticResource BtnDestructive}" Padding="20,9" IsEnabled="False" Click="Review_Click"/>
+            </Grid>
+        </Grid>
+
+        <!-- ══════════════ Diálogo ══════════════ -->
+        <Grid x:Name="Overlay" Visibility="Collapsed" Background="{StaticResource Br.Backdrop}">
+            <Border Style="{StaticResource CardHero}" Width="580" MaxHeight="600" Margin="30"
+                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect Color="Black" BlurRadius="50" ShadowDepth="10" Opacity="0.6"/>
+                </Border.Effect>
+                <DockPanel>
+                    <Grid DockPanel.Dock="Top">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Width="50" Height="50" CornerRadius="13" Background="{StaticResource Br.AccentTint}"
+                                Margin="0,0,14,0">
+                            <Grid>
+                                <Image x:Name="DialogImage" Width="36" Height="36" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                <Path x:Name="DialogGlyph" Width="24" Height="24" Stretch="Uniform"
+                                      StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                      StrokeLineJoin="Round"/>
+                            </Grid>
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock x:Name="DialogTitle" Style="{StaticResource T.Headline}" FontSize="16"
+                                       TextWrapping="Wrap"/>
+                            <TextBlock x:Name="DialogSubtitle" Style="{StaticResource T.Caption}" Margin="0,3,0,0"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock x:Name="DialogMessage" DockPanel.Dock="Top" Style="{StaticResource T.Secondary}"
+                               Margin="0,16,0,0" LineHeight="19"/>
+
+                    <StackPanel x:Name="DialogProgressPanel" DockPanel.Dock="Bottom" Margin="0,16,0,0" Visibility="Collapsed">
+                        <Grid Margin="0,0,0,8">
+                            <TextBlock x:Name="DialogProgressText" Style="{StaticResource T.Value}"
+                                       TextTrimming="CharacterEllipsis" Margin="0,0,90,0"/>
+                            <TextBlock x:Name="DialogProgressPercent" Style="{StaticResource T.Value}"
+                                       Foreground="{StaticResource Br.AccentBright}" HorizontalAlignment="Right"/>
+                        </Grid>
+                        <ProgressBar x:Name="DialogProgressBar" Style="{StaticResource MeterLarge}" Maximum="1"/>
+                        <TextBlock x:Name="DialogProgressFreed" Style="{StaticResource T.Caption}" Margin="0,8,0,0"/>
+                    </StackPanel>
+
+                    <Grid DockPanel.Dock="Bottom" Margin="0,18,0,0">
+                        <TextBlock x:Name="DialogTotal" Style="{StaticResource T.Value}" VerticalAlignment="Center"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button x:Name="DialogSecondary" Style="{StaticResource BtnGhost}" Margin="0,0,10,0"
+                                    Click="DialogSecondary_Click"/>
+                            <Button x:Name="DialogPrimary" Style="{StaticResource BtnDestructive}" Padding="18,9"
+                                    Click="DialogPrimary_Click"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Border x:Name="DialogListHost" Style="{StaticResource Well}" Margin="0,16,0,0" Padding="4">
+                        <ListBox x:Name="DialogList" Style="{StaticResource FlatList}"
+                                 ItemTemplate="{StaticResource DialogRowTemplate}" MaxHeight="300"/>
+                    </Border>
+                </DockPanel>
+            </Border>
+        </Grid>
+        <!-- ══════════════ Visor de fotos y archivos ══════════════ -->
+        <Grid x:Name="PreviewOverlay" Visibility="Collapsed" Background="#F2060409"
+              MouseLeftButtonUp="PreviewBackdrop_Click">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Grid Margin="26,18,20,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock x:Name="PreviewName" Style="{StaticResource T.Headline}" FontSize="16"
+                               TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="PreviewMeta" Style="{StaticResource T.Caption}" Margin="0,4,0,0"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
+                    <TextBlock x:Name="PreviewCounter" Style="{StaticResource T.Caption}" VerticalAlignment="Center"
+                               Margin="0,0,14,0"/>
+                    <Button Style="{StaticResource BtnIcon}" Click="PreviewClose_Click" ToolTip="Cerrar (Esc)">
+                        <Path Data="{StaticResource Glyph.Close}" Stroke="{StaticResource Br.TextPrimary}" StrokeThickness="2.4"
+                              StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="10" Height="10" Stretch="Uniform"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <Grid Grid.Row="1" x:Name="PreviewStage">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="80"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="80"/>
+                </Grid.ColumnDefinitions>
+
+                <Button x:Name="PreviewPrevButton" Style="{StaticResource BtnIcon}" Width="46" Height="46"
+                        Click="PreviewPrev_Click" ToolTip="Anterior (←)">
+                    <Path Data="{StaticResource Glyph.Back}" Stroke="{StaticResource Br.TextPrimary}" StrokeThickness="2.4"
+                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                          Width="12" Height="12" Stretch="Uniform"/>
+                </Button>
+
+                <Grid Grid.Column="1" Margin="0,4">
+                    <Image x:Name="PreviewImage" Stretch="Uniform" StretchDirection="DownOnly"
+                           RenderOptions.BitmapScalingMode="HighQuality">
+                        <Image.Effect>
+                            <DropShadowEffect Color="Black" BlurRadius="40" ShadowDepth="6" Opacity="0.6"/>
+                        </Image.Effect>
+                    </Image>
+                    <MediaElement x:Name="PreviewMedia" LoadedBehavior="Manual" UnloadedBehavior="Stop"
+                                  Stretch="Uniform" Visibility="Collapsed" MouseLeftButtonUp="PreviewMedia_Click"
+                                  MediaFailed="PreviewMedia_Failed"/>
+                    <StackPanel x:Name="PreviewFallback" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                Visibility="Collapsed">
+                        <Image x:Name="PreviewFallbackIcon" Width="96" Height="96" RenderOptions.BitmapScalingMode="HighQuality"/>
+                        <TextBlock x:Name="PreviewFallbackText" Style="{StaticResource T.Secondary}" TextAlignment="Center"
+                                   HorizontalAlignment="Center" Margin="0,16,0,0" MaxWidth="420"/>
+                    </StackPanel>
+                    <TextBlock x:Name="PreviewLoading" Text="Cargando…" Style="{StaticResource T.Caption}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
+                </Grid>
+
+                <Button x:Name="PreviewNextButton" Grid.Column="2" Style="{StaticResource BtnIcon}" Width="46" Height="46"
+                        Click="PreviewNext_Click" ToolTip="Siguiente (→)">
+                    <Path Data="{StaticResource Glyph.Forward}" Stroke="{StaticResource Br.TextPrimary}" StrokeThickness="2.4"
+                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                          Width="12" Height="12" Stretch="Uniform"/>
+                </Button>
+            </Grid>
+
+            <WrapPanel Grid.Row="2" HorizontalAlignment="Center" Margin="20,10,20,22">
+                <Button Content="Abrir" Style="{StaticResource BtnPrimary}" Padding="22,9" Margin="0,0,10,0"
+                        Click="PreviewOpen_Click"/>
+                <Button Content="Abrir con…" Style="{StaticResource Btn}" Margin="0,0,10,0" Click="PreviewOpenWith_Click"/>
+                <Button Content="Mostrar en el Explorador" Style="{StaticResource BtnGhost}" Margin="0,0,10,0"
+                        Click="PreviewReveal_Click"/>
+                <Button x:Name="PreviewSelectButton" Style="{StaticResource BtnGhost}" Click="PreviewSelect_Click"/>
+            </WrapPanel>
+        </Grid>
+    </Grid>
+</UserControl>

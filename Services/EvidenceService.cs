@@ -48,7 +48,7 @@ public record EvidencePart
 public record EvidenceDocument
 {
     public string FormatVersion { get; init; } = "1.0";
-    public string Application { get; init; } = "System Monitor";
+    public string Application { get; init; } = "Barep";
     public DateTime CreatedAt { get; init; } = DateTime.Now;
     public string MachineName { get; init; } = "";
     public string UserName { get; init; } = "";
@@ -104,9 +104,13 @@ public class EvidenceService
     {
         get
         {
-            var folder = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                "System Monitor", "Evidencias");
+            var documents = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            var folder = Path.Combine(documents, "Barep", "Evidencias");
+
+            // Las actas hechas con el nombre anterior de la app siguen donde estaban.
+            var legacy = Path.Combine(documents, "System Monitor", "Evidencias");
+            if (!Directory.Exists(folder) && Directory.Exists(legacy)) return legacy;
+
             Directory.CreateDirectory(folder);
             return folder;
         }
@@ -424,7 +428,7 @@ public class EvidenceService
         var line = new string('─', 66);
 
         sb.AppendLine(line);
-        sb.AppendLine("  ACTA DE HARDWARE — SYSTEM MONITOR");
+        sb.AppendLine("  ACTA DE HARDWARE — BAREP");
         sb.AppendLine(line);
         sb.AppendLine();
         sb.AppendLine($"  Equipo          {doc.MachineName}");
@@ -479,7 +483,7 @@ public class EvidenceService
         var line = new string('─', 66);
 
         sb.AppendLine(line);
-        sb.AppendLine("  VERIFICACIÓN DE HARDWARE — SYSTEM MONITOR");
+        sb.AppendLine("  VERIFICACIÓN DE HARDWARE — BAREP");
         sb.AppendLine(line);
         sb.AppendLine();
         sb.AppendLine($"  Acta original   {comparison.Saved.CreatedAt:dd/MM/yyyy HH:mm}");
